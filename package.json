@@ -1,0 +1,25 @@
+{
+  "name": "mod-influxdb",
+  "types": ["module"],
+  "version": "0.1",
+  "homepage": "http://github.com/shinken-monitoring/mod-influxdb",
+  "author": "Alexandre Viau",
+  "description": "Export host and service performance data to InfluxDB",
+  "contributors": [
+    {
+      "name": "Alexandre Viau",
+      "email": "alexandre.viau@savoirfairelinux.com"
+    }
+  ],
+  "repository": "https://github.com/savoirfairelinux/mod-influxdb",
+  "keywords": [
+    "module",
+    "broker",
+    "influxdb"
+  ],
+  "dependencies": {
+    "shinken": ">=2.0"
+    "influxdb": ">=0.1.7"
+  },
+  "license": "AGPL"
+}
