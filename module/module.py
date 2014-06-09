@@ -74,7 +74,7 @@ class InfluxdbBroker(BaseModule):
                     (self.get_name(), str(self.host), self.port))
 
         self.db = InfluxDBClient(self.host, self.port, self.user, self.password, self.database,
-                                 self.use_udp, self.udp_port)
+                                 use_udp=self.use_udp, udp_port=self.udp_port)
 
     # A service check result brok has just arrived, we UPDATE data info with this
     def manage_service_check_result_brok(self, b):
@@ -158,7 +158,6 @@ class InfluxdbBroker(BaseModule):
 
         if len(self.buffer) > 0:
             try:
-                logger.error(str(self.buffer))
                 self.db.write_points(self.buffer)
                 self.buffer = []
                 self.ticks = 0
