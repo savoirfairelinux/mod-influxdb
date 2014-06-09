@@ -1,7 +1,7 @@
 {
   "name": "mod-influxdb",
   "types": ["module"],
-  "version": "0.1",
+  "version": "0.2",
   "homepage": "http://github.com/shinken-monitoring/mod-influxdb",
   "author": "Alexandre Viau",
   "description": "Export host and service performance data to InfluxDB",
@@ -20,7 +20,7 @@
   ],
   "dependencies": {
     "shinken": ">=2.0",
-    "influxdb": ">=0.1.7"
+    "influxdb": ">=0.1.9"
   },
   "license": "AGPL"
 }

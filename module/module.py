@@ -60,13 +60,17 @@ class InfluxdbBroker(BaseModule):
         self.user = getattr(modconf, 'user', 'root')
         self.password = getattr(modconf, 'password', 'root')
         self.database = getattr(modconf, 'database', 'database')
+        self.use_udp = getattr(modconf, 'use_udp', '0') == '1'
+        self.udp_port = int(getattr(modconf, 'udp_port', '4444'))
 
     # Called by Broker so we can do init stuff
     # Conf from arbiter!
     def init(self):
         logger.info("[influxdb broker] I init the %s server connection to %s:%d" %
                     (self.get_name(), str(self.host), self.port))
-        self.db = InfluxDBClient(self.host, self.port, self.user, self.password, self.database)
+
+        self.db = InfluxDBClient(self.host, self.port, self.user, self.password, self.database,
+                                 self.use_udp, self.udp_port)
 
     # A service check result brok has just arrived, we UPDATE data info with this
     def manage_service_check_result_brok(self, b):
