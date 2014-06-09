@@ -2,7 +2,7 @@
   "name": "mod-influxdb",
   "types": ["module"],
   "version": "0.2",
-  "homepage": "http://github.com/shinken-monitoring/mod-influxdb",
+  "homepage": "https://github.com/savoirfairelinux/mod-influxdb",
   "author": "Alexandre Viau",
   "description": "Export host and service performance data to InfluxDB",
   "contributors": [
@@ -15,7 +15,7 @@
   "keywords": [
     "module",
     "broker",
-    "influxdb"
+    "influxdb",
     "influx"
   ],
   "dependencies": {
