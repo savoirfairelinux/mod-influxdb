@@ -16,6 +16,7 @@
     "module",
     "broker",
     "influxdb"
+    "influx"
   ],
   "dependencies": {
     "shinken": ">=2.0",
