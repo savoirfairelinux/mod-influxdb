@@ -61,6 +61,10 @@ class InfluxdbBroker(BaseModule):
         self.password = getattr(modconf, 'password', 'root')
         self.database = getattr(modconf, 'database', 'database')
 
+        self.buffer = []
+        self.ticks = 0
+        self.tick_limit = int(getattr(modconf, 'tick_limit', '300'))
+
     # Called by Broker so we can do init stuff
     # Conf from arbiter!
     def init(self):
@@ -103,7 +107,7 @@ class InfluxdbBroker(BaseModule):
         except UnicodeEncodeError:
             pass
 
-        self.db.write_points(post_data)
+        self.buffer += post_data
 
     # A host check result brok has just arrived, we UPDATE data info with this
     def manage_host_check_result_brok(self, b):
@@ -139,4 +143,22 @@ class InfluxdbBroker(BaseModule):
         except UnicodeEncodeError:
             pass
 
-        self.db.write_points(post_data)
+        self.buffer += post_data
+
+    def hook_tick(self, brok):
+
+        if self.ticks >= self.tick_limit:
+            logger.error("[influxdb broker] Buffering ticks exceeded. Freeing buffer")
+            self.buffer = []
+            self.ticks = 0
+
+        if len(self.buffer) > 0:
+            try:
+                logger.error(str(self.buffer))
+                self.db.write_points(self.buffer)
+                self.buffer = []
+                self.ticks = 0
+            except:
+                self.ticks += 1
+                logger.error("[influxdb broker] Sending data Failed. Buffering state : %s / %s"
+                             % (self.ticks, self.tick_limit))
