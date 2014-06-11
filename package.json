@@ -1,10 +1,10 @@
 {
   "name": "mod-influxdb",
   "types": ["module"],
-  "version": "0.2",
+  "version": "0.3",
   "homepage": "https://github.com/savoirfairelinux/mod-influxdb",
   "author": "Alexandre Viau",
-  "description": "Export host and service performance data to InfluxDB",
+  "description": "Export host and service performance data and events to InfluxDB",
   "contributors": [
     {
       "name": "Alexandre Viau",
@@ -20,7 +20,7 @@
   ],
   "dependencies": {
     "shinken": ">=2.0",
-    "influxdb": ">=0.1.9"
+    "influxdb": ">=0.1.10"
   },
   "license": "AGPL"
 }

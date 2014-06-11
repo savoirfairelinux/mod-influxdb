@@ -74,80 +74,106 @@ class InfluxdbBroker(BaseModule):
                     (self.get_name(), str(self.host), self.port))
 
         self.db = InfluxDBClient(self.host, self.port, self.user, self.password, self.database,
-                                 use_udp=self.use_udp, udp_port=self.udp_port)
+                                 use_udp=self.use_udp, udp_port=self.udp_port, timeout=None)
+
+    # Returns perfdata points for a given check_result_brok data
+    @staticmethod
+    def get_check_result_perfdata_points(data, name):
+
+        points = []
+        perf_data = data['perf_data']
+        metrics = PerfDatas(perf_data).metrics
+
+        for e in metrics.values():
+            points.append(
+                {"points": [[data['last_chk'], e.value, e.uom, e.warning, e.critical, e.min, e.max]],
+                 "name": "%s.%s" % (name, e.name),
+                 "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
+                 }
+            )
+
+        return points
+
+    # Returns state_update points for a given check_result_brok data
+    @staticmethod
+    def get_state_update_points(data, name):
+        points = []
+
+        if data['state'] != data['last_state'] or \
+                data['state_type'] != data['last_state_type']:
+
+            points.append(
+                {
+                    "points": [[
+                        data['last_chk'],
+                        data['state'],
+                        data['state_type'],
+                        #We should not bother posting attempt
+                        #if max_check_attempts is not available
+                        #data['attempt'],
+                        #data['max_check_attempts']
+                        data['output']
+                    ]],
+                    "name": "%s._events_.alerts" % name,
+                    "columns": [
+                        "time",
+                        "state",
+                        "state_type",
+                        #"current_check_attempt",
+                        #"max_check_attempts",
+                        "output"
+                    ]
+                }
+            )
+
+        return points
 
     # A service check result brok has just arrived, we UPDATE data info with this
     def manage_service_check_result_brok(self, b):
         data = b.data
-
-        perf_data = data['perf_data']
-        metrics = PerfDatas(perf_data).metrics
-
-        # If no values, we can exit now
-        if len(metrics) == 0:
-            return
-
-        hname = self.illegal_char.sub('_', data['host_name'])
-        desc = self.illegal_char.sub('_', data['service_description'])
-        check_time = int(data['last_chk'])
-
-        try:
-            logger.debug("[influxdb broker] Hostname: %s, Desc: %s, check time: %d, perfdata: %s"
-                         % (hname, desc, check_time, str(perf_data)))
-        except UnicodeEncodeError:
-            pass
+        name = "%s.%s" % (
+            self.illegal_char.sub('_', data['host_name']),
+            self.illegal_char.sub('_', data['service_description'])
+        )
 
         post_data = []
-        for e in metrics.values():
-            post_data .append(
-                {"points": [[check_time, e.value, e.uom, e.warning, e.critical, e.min, e.max]],
-                 "name": "%s.%s.%s" % (hname, desc, e.name),
-                 "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
-                 }
-            )
+
+        post_data.extend(
+            self.get_check_result_perfdata_points(b.data, name)
+        )
+
+        post_data.extend(
+            self.get_state_update_points(b.data, name)
+        )
 
         try:
             logger.debug("[influxdb broker] Launching: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
-        self.buffer += post_data
+        self.buffer.extend(post_data)
 
     # A host check result brok has just arrived, we UPDATE data info with this
     def manage_host_check_result_brok(self, b):
         data = b.data
-
-        perf_data = data['perf_data']
-        metrics = PerfDatas(perf_data).metrics
-
-        # If no values, we can exit now
-        if len(metrics) == 0:
-            return
-
-        hname = self.illegal_char.sub('_', data['host_name'])
-        check_time = int(data['last_chk'])
-
-        try:
-            logger.debug("[influxdb broker] Hostname %s, check time: %d, perfdata: %s"
-                         % (hname, check_time, str(perf_data)))
-        except UnicodeEncodeError:
-            pass
+        name = self.illegal_char.sub('_', data['host_name'])
 
         post_data = []
-        for e in metrics.values():
-            post_data .append(
-                {"points": [[check_time, e.value, e.uom, e.warning, e.critical, e.min, e.max]],
-                 "name": "%s.%s" % (hname, e.name),
-                 "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
-                 }
-            )
+
+        post_data.extend(
+            self.get_check_result_perfdata_points(b.data, name)
+        )
+
+        post_data.extend(
+            self.get_state_update_points(b.data, name)
+        )
 
         try:
             logger.debug("[influxdb broker] Launching: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
-        self.buffer += post_data
+        self.buffer.extend(post_data)
 
     def hook_tick(self, brok):
 
