@@ -33,8 +33,8 @@ backend. http://influxdb.com/
 from shinken.basemodule import BaseModule
 from shinken.log import logger
 from shinken.misc.perfdata import PerfDatas
+from shinken.misc.logevent import LogEvent
 from influxdb import InfluxDBClient
-
 
 properties = {
     'daemons': ['broker'],
@@ -174,6 +174,31 @@ class InfluxdbBroker(BaseModule):
             pass
 
         self.buffer.extend(post_data)
+
+    # A log brok has arrived, we UPDATE data info with this
+    def manage_log_brok(self, b):
+        log = b.data['log']
+        event = LogEvent(log)
+
+        if len(event) > 0:
+            # include service_desc in the table name if present
+            if 'service_desc' in event and event['service_desc'] is not None:
+                name = "%s.%s._events_.%s" % (event['hostname'], event['service_desc'], event['event_type'])
+            else:
+                name = "%s._events_.%s" % (event['hostname'], event['event_type'])
+
+            point = {
+                "points": [[]],
+                "name": name,
+                "columns": []
+            }
+
+            # Add each property of the service in the point
+            for prop in event:
+                point['columns'].append(prop[0])
+                point['points'][0].append(prop[1])
+
+            self.buffer.append(point)
 
     def hook_tick(self, brok):
 
