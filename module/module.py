@@ -94,6 +94,25 @@ class InfluxdbBroker(BaseModule):
 
         return points
 
+    # Returns perfdata points for a given unknown_[service|host]_check_result_brok data
+    @staticmethod
+    def get_unknown_check_result_perfdata_points(data, name):
+        import ipdb; ipdb.set_trace()
+
+        points = []
+        perf_data = data['perf_data']
+        metrics = PerfDatas(perf_data).metrics
+
+        for e in metrics.values():
+            points.append(
+                {"points": [[data['time_stamp'], e.value, e.uom, e.warning, e.critical, e.min, e.max]],
+                 "name": "%s.%s" % (name, e.name),
+                 "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
+                }
+            )
+
+        return points
+
     # Returns state_update points for a given check_result_brok data
     @staticmethod
     def get_state_update_points(data, name):
@@ -166,6 +185,43 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_state_update_points(b.data, name)
+        )
+
+        try:
+            logger.debug("[influxdb broker] Launching: %s" % str(post_data))
+        except UnicodeEncodeError:
+            pass
+
+        self.buffer.extend(post_data)
+
+    def manage_unknown_host_check_result_brok(self, b):
+        data = b.data
+        name = self.illegal_char.sub('_', data['host_name'])
+
+        post_data = []
+
+        post_data.extend(
+            self.get_unknown_check_result_perfdata_points(b.data, name)
+        )
+
+        try:
+            logger.debug("[influxdb broker] Launching: %s" % str(post_data))
+        except UnicodeEncodeError:
+            pass
+
+        self.buffer.extend(post_data)
+
+    def manage_unknown_service_check_result_brok(self, b):
+        data = b.data
+        name = "%s.%s" % (
+            self.illegal_char.sub('_', data['host_name']),
+            self.illegal_char.sub('_', data['service_description'])
+        )
+
+        post_data = []
+
+        post_data.extend(
+            self.get_unknown_check_result_perfdata_points(b.data, name)
         )
 
         try:
