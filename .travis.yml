@@ -3,11 +3,9 @@ python:
   - "2.7"
 
 install:
-  - "pip install -r requirements.txt"
   - "pip install pycurl"
   - "sudo useradd shinken"
-  - "sudo /home/travis/virtualenv/python2.7/bin/pip install git+git://github.com/naparuba/shinken.git"
-  
+  - "pip install -r requirements.txt"
 
 script: nosetests -vx
 
