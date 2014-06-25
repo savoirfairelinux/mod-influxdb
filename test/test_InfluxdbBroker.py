@@ -24,3 +24,53 @@ class TestInfluxdbBroker(unittest.TestCase):
         ]
         result = InfluxdbBroker.get_check_result_perfdata_points(data, name)
         self.assertEqual(expected, result)
+
+    def test_get_state_update_points(self):
+        name = 'testname'
+
+        #the state type changes
+        data = {
+            'last_chk': 1403618279,
+            'state': 'WARNING',
+            'last_state': 'WARNING',
+            'state_type': 'HARD',
+            'last_state_type': 'SOFT',
+            'output': 'BOB IS NOT HAPPY',
+        }
+        result = InfluxdbBroker.get_state_update_points(data, name)
+        expected = [
+            {'points': [[1403618279, 'WARNING', 'HARD', 'BOB IS NOT HAPPY']],
+             'name': 'testname._events_.alerts',
+             'columns': ['time', 'state', 'state_type', 'output']}
+        ]
+        self.assertEqual(expected, result)
+
+        #The state changes
+        data = {
+            'last_chk': 1403618279,
+            'state': 'WARNING',
+            'last_state': 'CRITICAL',
+            'state_type': 'SOFT',
+            'last_state_type': 'SOFT',
+            'output': 'BOB IS NOT HAPPY',
+        }
+        result = InfluxdbBroker.get_state_update_points(data, name)
+        expected = [
+            {'points': [[1403618279, 'WARNING', 'SOFT', 'BOB IS NOT HAPPY']],
+             'name': 'testname._events_.alerts',
+             'columns': ['time', 'state', 'state_type', 'output']}
+        ]
+        self.assertEqual(expected, result)
+
+        #Nothing changes
+        data = {
+            'last_chk': 1403618279,
+            'state': 'WARNING',
+            'last_state': 'WARNING',
+            'state_type': 'SOFT',
+            'last_state_type': 'SOFT',
+            'output': 'BOB IS NOT HAPPY',
+        }
+        result = InfluxdbBroker.get_state_update_points(data, name)
+        expected = []
+        self.assertEqual(expected, result)
