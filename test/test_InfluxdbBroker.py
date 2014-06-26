@@ -152,3 +152,20 @@ class TestInfluxdbBroker(unittest.TestCase):
         # does not raise errors and that the buffer empties.
         self.assertEqual(len(broker.buffer), 0)
         self.assertEqual(broker.ticks, 0)
+
+    def test_hook_tick_limit(self):
+        modconf = Module(
+            {
+                'module_name': 'influxdbBroker',
+                'module_type': 'influxdbBroker',
+            }
+        )
+
+        broker = InfluxdbBroker(modconf)
+        broker.tick_limit = 300
+        broker.ticks = 299
+        broker.buffer.append('this_wont_work_lol')
+        broker.hook_tick(None)
+        broker.hook_tick(None)
+        self.assertEqual(broker.ticks, 0)
+        self.assertEqual(broker.buffer, [])
