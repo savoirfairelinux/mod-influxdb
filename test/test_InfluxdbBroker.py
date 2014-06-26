@@ -1,9 +1,18 @@
 from module.module import InfluxdbBroker
 from shinken.objects.module import Module
+from shinken.brok import Brok
 import unittest
 
 
 class TestInfluxdbBroker(unittest.TestCase):
+
+    def setUp(self):
+        self.basic_modconf = Module(
+            {
+                'module_name': 'influxdbBroker',
+                'module_type': 'influxdbBroker',
+            }
+        )
 
     def test_get_check_result_perfdata_points(self):
         name = 'testname'
@@ -79,14 +88,7 @@ class TestInfluxdbBroker(unittest.TestCase):
     def test_init_defaults(self):
 
         #defaults
-        modconf = Module(
-            {
-                'module_name': 'influxdbBroker',
-                'module_type': 'influxdbBroker',
-            }
-        )
-
-        broker = InfluxdbBroker(modconf)
+        broker = InfluxdbBroker(self.basic_modconf)
 
         self.assertEqual(broker.host, 'localhost')
         self.assertEqual(broker.port, 8086)
@@ -125,14 +127,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(broker.tick_limit, 3333)
 
     def test_hook_tick(self):
-        modconf = Module(
-            {
-                'module_name': 'influxdbBroker',
-                'module_type': 'influxdbBroker',
-                'udp_port': '4445',
-                'use_udp': '1',
-            }
-        )
+        setattr(self.basic_modconf, 'use_udp', '1')
 
         data = [
             {
@@ -142,7 +137,7 @@ class TestInfluxdbBroker(unittest.TestCase):
             }
         ]
 
-        broker = InfluxdbBroker(modconf)
+        broker = InfluxdbBroker(self.basic_modconf)
         broker.init()
         broker.buffer.append(data)
         broker.hook_tick(None)
@@ -154,14 +149,8 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(broker.ticks, 0)
 
     def test_hook_tick_limit(self):
-        modconf = Module(
-            {
-                'module_name': 'influxdbBroker',
-                'module_type': 'influxdbBroker',
-            }
-        )
 
-        broker = InfluxdbBroker(modconf)
+        broker = InfluxdbBroker(self.basic_modconf)
         broker.tick_limit = 300
         broker.ticks = 299
         broker.buffer.append('this_wont_work_lol')
@@ -169,3 +158,28 @@ class TestInfluxdbBroker(unittest.TestCase):
         broker.hook_tick(None)
         self.assertEqual(broker.ticks, 0)
         self.assertEqual(broker.buffer, [])
+
+    def test_manage_log_brok(self):
+        data = {
+            'log': '[1402515279] HOST NOTIFICATION: admin;localhost;CRITICAL;notify-service-by-email;Connection refused'
+        }
+        brok = Brok('log', data)
+        brok.prepare()
+
+        broker = InfluxdbBroker(self.basic_modconf)
+        broker.manage_log_brok(brok)
+
+        # We are not testing shinken.LogEvent
+        # Only make sure that this has generated 1 point
+        self.assertEqual(len(broker.buffer), 1)
+        point = broker.buffer[0]
+
+        # That the point's name is appropriate
+        self.assertEqual(point['name'], 'localhost._events_.NOTIFICATION')
+
+        # And that there is as much columns as there is points
+        # (manage_log_brok has a special way of creating points)
+        self.assertEqual(
+            len(point['points'][0]),
+            len(point['columns'])
+        )
