@@ -174,7 +174,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(len(broker.buffer), 1)
         point = broker.buffer[0]
 
-        # That the point's name is appropriate
+        # That the point's name is appropriate (host._events_.[event_type])
         self.assertEqual(point['name'], 'localhost._events_.NOTIFICATION')
 
         # And that there is as much columns as there is points
@@ -183,3 +183,14 @@ class TestInfluxdbBroker(unittest.TestCase):
             len(point['points'][0]),
             len(point['columns'])
         )
+
+        # A service notification's name should be different (host.service._events_.[event_type])
+        data['log'] = '[1402515279] SERVICE NOTIFICATION: admin;localhost;check-ssh;CRITICAL;notify-service-by-email;Connection refused'
+        brok = Brok('log', data)
+        brok.prepare()
+        broker.buffer = []
+        broker.manage_log_brok(brok)
+        point = broker.buffer[0]
+        self.assertEqual(point['name'], 'localhost.check-ssh._events_.NOTIFICATION')
+
+
