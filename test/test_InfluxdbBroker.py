@@ -1,6 +1,6 @@
 from module.module import InfluxdbBroker
-import unittest
 from shinken.objects.module import Module
+import unittest
 
 
 class TestInfluxdbBroker(unittest.TestCase):
@@ -123,3 +123,32 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(broker.use_udp, True)
         self.assertEqual(broker.udp_port, 2222)
         self.assertEqual(broker.tick_limit, 3333)
+
+    def test_hook_tick(self):
+        modconf = Module(
+            {
+                'module_name': 'influxdbBroker',
+                'module_type': 'influxdbBroker',
+                'udp_port': '4445',
+                'use_udp': '1',
+            }
+        )
+
+        data = [
+            {
+                "points": [["1", 1, 1.0], ["2", 2, 2.0]],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three"]
+            }
+        ]
+
+        broker = InfluxdbBroker(modconf)
+        broker.init()
+        broker.buffer.append(data)
+        broker.hook_tick(None)
+
+        # We are not testing python-influxdb.
+        # We are only making sure that the format of points we are sending
+        # does not raise errors and that the buffer empties.
+        self.assertEqual(len(broker.buffer), 0)
+        self.assertEqual(broker.ticks, 0)
