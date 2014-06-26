@@ -1,5 +1,6 @@
 from module.module import InfluxdbBroker
 import unittest
+from shinken.objects.module import Module
 
 
 class TestInfluxdbBroker(unittest.TestCase):
@@ -74,3 +75,51 @@ class TestInfluxdbBroker(unittest.TestCase):
         result = InfluxdbBroker.get_state_update_points(data, name)
         expected = []
         self.assertEqual(expected, result)
+
+    def test_init_defaults(self):
+
+        #defaults
+        modconf = Module(
+            {
+                'module_name': 'influxdbBroker',
+                'module_type': 'influxdbBroker',
+            }
+        )
+
+        broker = InfluxdbBroker(modconf)
+
+        self.assertEqual(broker.host, 'localhost')
+        self.assertEqual(broker.port, 8086)
+        self.assertEqual(broker.user, 'root')
+        self.assertEqual(broker.password, 'root')
+        self.assertEqual(broker.database, 'database')
+        self.assertEqual(broker.use_udp, False)
+        self.assertEqual(broker.udp_port, 4444)
+        self.assertEqual(broker.tick_limit, 300)
+
+    def test_init(self):
+        modconf = Module(
+            {
+                'module_name': 'influxdbBroker',
+                'module_type': 'influxdbBroker',
+                'host': 'testhost',
+                'port': '1111',
+                'user': 'testuser',
+                'password': 'testpassword',
+                'database': 'testdatabase',
+                'use_udp': '1',
+                'udp_port': '2222',
+                'tick_limit': '3333',
+            }
+        )
+
+        broker = InfluxdbBroker(modconf)
+
+        self.assertEqual(broker.host, 'testhost')
+        self.assertEqual(broker.port, 1111)
+        self.assertEqual(broker.user, 'testuser')
+        self.assertEqual(broker.password, 'testpassword')
+        self.assertEqual(broker.database, 'testdatabase')
+        self.assertEqual(broker.use_udp, True)
+        self.assertEqual(broker.udp_port, 2222)
+        self.assertEqual(broker.tick_limit, 3333)
