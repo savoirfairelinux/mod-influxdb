@@ -150,7 +150,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         # We are not testing python-influxdb.
         # We are only making sure that the format of points we are sending
         # does not raise errors and that the buffer empties.
-        self.assertEqual(len(broker.buffer), 0)
+        self.assertEqual(broker.buffer, [])
         self.assertEqual(broker.ticks, 0)
 
     def test_hook_tick_limit(self):
