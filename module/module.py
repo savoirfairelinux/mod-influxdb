@@ -97,8 +97,6 @@ class InfluxdbBroker(BaseModule):
     # Returns perfdata points for a given unknown_[service|host]_check_result_brok data
     @staticmethod
     def get_unknown_check_result_perfdata_points(data, name):
-        import ipdb; ipdb.set_trace()
-
         points = []
         perf_data = data['perf_data']
         metrics = PerfDatas(perf_data).metrics
