@@ -36,7 +36,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         result = InfluxdbBroker.get_check_result_perfdata_points(
             data['perf_data'],
             data['time_stamp'],
-            name,
+            name
         )
         self.assertEqual(expected, result)
 
@@ -61,7 +61,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         result = InfluxdbBroker.get_check_result_perfdata_points(
             data['perf_data'],
             data['last_chk'],
-            name,
+            name
         )
         self.assertEqual(expected, result)
 

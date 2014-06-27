@@ -141,7 +141,7 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['last_chk'],
-                name,
+                name
             )
         )
 
@@ -167,7 +167,7 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['last_chk'],
-                name,
+                name
             )
         )
 
@@ -192,7 +192,7 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['time_stamp'],
-                name,
+                name
             )
         )
 
@@ -216,7 +216,7 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['time_stamp'],
-                name,
+                name
             )
         )
 
