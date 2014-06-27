@@ -116,8 +116,6 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(expected, result)
 
     def test_init_defaults(self):
-
-        #defaults
         broker = InfluxdbBroker(self.basic_modconf)
 
         self.assertEqual(broker.host, 'localhost')
@@ -178,8 +176,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(broker.buffer, [])
         self.assertEqual(broker.ticks, 0)
 
-    def test_hook_tick_limit(self):
-
+    def test_hook_tick_limit(self)
         broker = InfluxdbBroker(self.basic_modconf)
         broker.tick_limit = 300
         broker.ticks = 299
