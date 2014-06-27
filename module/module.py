@@ -76,37 +76,19 @@ class InfluxdbBroker(BaseModule):
         self.db = InfluxDBClient(self.host, self.port, self.user, self.password, self.database,
                                  use_udp=self.use_udp, udp_port=self.udp_port, timeout=None)
 
-    # Returns perfdata points for a given check_result_brok data
+    # Returns perfdata points
     @staticmethod
-    def get_check_result_perfdata_points(data, name):
+    def get_check_result_perfdata_points(perf_data, timestamp, name):
 
         points = []
-        perf_data = data['perf_data']
         metrics = PerfDatas(perf_data).metrics
 
         for e in metrics.values():
             points.append(
-                {"points": [[data['last_chk'], e.value, e.uom, e.warning, e.critical, e.min, e.max]],
+                {"points": [[timestamp, e.value, e.uom, e.warning, e.critical, e.min, e.max]],
                  "name": "%s.%s" % (name, e.name),
                  "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
                  }
-            )
-
-        return points
-
-    # Returns perfdata points for a given unknown_[service|host]_check_result_brok data
-    @staticmethod
-    def get_unknown_check_result_perfdata_points(data, name):
-        points = []
-        perf_data = data['perf_data']
-        metrics = PerfDatas(perf_data).metrics
-
-        for e in metrics.values():
-            points.append(
-                {"points": [[data['time_stamp'], e.value, e.uom, e.warning, e.critical, e.min, e.max]],
-                 "name": "%s.%s" % (name, e.name),
-                 "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
-                }
             )
 
         return points
@@ -156,7 +138,11 @@ class InfluxdbBroker(BaseModule):
         post_data = []
 
         post_data.extend(
-            self.get_check_result_perfdata_points(b.data, name)
+            self.get_check_result_perfdata_points(
+                b.data['perf_data'],
+                b.data['last_chk'],
+                name,
+            )
         )
 
         post_data.extend(
@@ -178,7 +164,11 @@ class InfluxdbBroker(BaseModule):
         post_data = []
 
         post_data.extend(
-            self.get_check_result_perfdata_points(b.data, name)
+            self.get_check_result_perfdata_points(
+                b.data['perf_data'],
+                b.data['last_chk'],
+                name,
+            )
         )
 
         post_data.extend(
@@ -199,7 +189,11 @@ class InfluxdbBroker(BaseModule):
         post_data = []
 
         post_data.extend(
-            self.get_unknown_check_result_perfdata_points(b.data, name)
+            self.get_check_result_perfdata_points(
+                b.data['perf_data'],
+                b.data['time_stamp'],
+                name,
+            )
         )
 
         try:
@@ -219,7 +213,11 @@ class InfluxdbBroker(BaseModule):
         post_data = []
 
         post_data.extend(
-            self.get_unknown_check_result_perfdata_points(b.data, name)
+            self.get_check_result_perfdata_points(
+                b.data['perf_data'],
+                b.data['time_stamp'],
+                name,
+            )
         )
 
         try:

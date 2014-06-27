@@ -33,7 +33,11 @@ class TestInfluxdbBroker(unittest.TestCase):
              'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']}
         ]
 
-        result = InfluxdbBroker.get_unknown_check_result_perfdata_points(data, name)
+        result = InfluxdbBroker.get_check_result_perfdata_points(
+            data['perf_data'],
+            data['time_stamp'],
+            name,
+        )
         self.assertEqual(expected, result)
 
     def test_get_check_result_perfdata_points(self):
@@ -54,7 +58,11 @@ class TestInfluxdbBroker(unittest.TestCase):
              'name': 'testname.swapused',
              'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']}
         ]
-        result = InfluxdbBroker.get_check_result_perfdata_points(data, name)
+        result = InfluxdbBroker.get_check_result_perfdata_points(
+            data['perf_data'],
+            data['last_chk'],
+            name,
+        )
         self.assertEqual(expected, result)
 
     def test_get_state_update_points(self):
