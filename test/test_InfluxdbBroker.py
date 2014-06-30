@@ -1,4 +1,4 @@
-from module.module import InfluxdbBroker
+from module.module import InfluxdbBroker, get_instance
 from shinken.objects.module import Module
 from shinken.brok import Brok
 import unittest
@@ -13,6 +13,10 @@ class TestInfluxdbBroker(unittest.TestCase):
                 'module_type': 'influxdbBroker',
             }
         )
+
+    def test_get_instance(self):
+        result = get_instance(self.basic_modconf)
+        self.assertTrue(type(result) is InfluxdbBroker)
 
     def test_get_unknown_check_result_perfdata_points(self):
         name = 'testname'
