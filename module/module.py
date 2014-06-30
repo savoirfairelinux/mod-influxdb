@@ -25,8 +25,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with Shinken.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This Class is a plugin for the Shinken Broker. It is in charge
-to brok information of the service/host perfdatas into the influxdb
+"""
+This Class is a plugin for the Shinken Broker. It is in charge
+to brok information of the services/hosts and events into the influxdb
 backend. http://influxdb.com/
 """
 
