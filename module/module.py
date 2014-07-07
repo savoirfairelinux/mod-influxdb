@@ -247,7 +247,7 @@ class InfluxdbBroker(BaseModule):
             }
 
             # Add each property of the service in the point
-            for prop in event:
+            for prop in [prop for prop in event if prop[0] not in ['hostname', 'event_type', 'service_desc']]:
                 point['columns'].append(prop[0])
                 point['points'][0].append(prop[1])
 

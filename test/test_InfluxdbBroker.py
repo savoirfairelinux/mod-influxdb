@@ -200,13 +200,18 @@ class TestInfluxdbBroker(unittest.TestCase):
         broker = InfluxdbBroker(self.basic_modconf)
         broker.manage_log_brok(brok)
 
-        # We are not testing shinken.LogEvent
-        # Only make sure that this has generated 1 point
+        # make sure that this has generated only 1 point
         self.assertEqual(len(broker.buffer), 1)
         point = broker.buffer[0]
 
-        # That the point's name is appropriate (host._events_.[event_type])
-        self.assertEqual(point['name'], 'localhost._events_.NOTIFICATION')
+        # validate the point
+        expected = {
+            'points': [[None, 'CRITICAL', 'admin', 1402515279, 'notify-service-by-email', 'HOST']],
+            'name': 'localhost._events_.NOTIFICATION',
+            'columns': ['acknownledgement', 'state', 'contact', 'time', 'notification_method', 'notification_type']
+        }
+
+        self.assertEqual(expected, point)
 
         # And that there is as much columns as there is points
         # (manage_log_brok has a special way of creating points)
