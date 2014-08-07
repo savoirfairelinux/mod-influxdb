@@ -114,7 +114,7 @@ class InfluxdbBroker(BaseModule):
                         #data['max_check_attempts']
                         data['output']
                     ]],
-                    "name": "%s._events_.alerts" % name,
+                    "name": "%s._events_.ALERT" % name,
                     "columns": [
                         "time",
                         "state",
@@ -236,9 +236,16 @@ class InfluxdbBroker(BaseModule):
         if len(event) > 0:
             # include service_desc in the table name if present
             if 'service_desc' in event and event['service_desc'] is not None:
-                name = "%s.%s._events_.%s" % (event['hostname'], event['service_desc'], event['event_type'])
+                name = "%s.%s._events_.%s" % (
+                    self.illegal_char.sub('_', event['hostname']),
+                    self.illegal_char.sub('_', event['service_desc']),
+                    event['event_type']
+                )
             else:
-                name = "%s._events_.%s" % (event['hostname'], event['event_type'])
+                name = "%s._events_.%s" % (
+                    self.illegal_char.sub('_', event['hostname']),
+                    event['event_type']
+                )
 
             point = {
                 "points": [[]],

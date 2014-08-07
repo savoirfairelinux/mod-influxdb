@@ -84,7 +84,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         result = InfluxdbBroker.get_state_update_points(data, name)
         expected = [
             {'points': [[1403618279, 'WARNING', 'HARD', 'BOB IS NOT HAPPY']],
-             'name': 'testname._events_.alerts',
+             'name': 'testname._events_.ALERT',
              'columns': ['time', 'state', 'state_type', 'output']}
         ]
         self.assertEqual(expected, result)
@@ -101,7 +101,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         result = InfluxdbBroker.get_state_update_points(data, name)
         expected = [
             {'points': [[1403618279, 'WARNING', 'SOFT', 'BOB IS NOT HAPPY']],
-             'name': 'testname._events_.alerts',
+             'name': 'testname._events_.ALERT',
              'columns': ['time', 'state', 'state_type', 'output']}
         ]
         self.assertEqual(expected, result)
@@ -228,5 +228,16 @@ class TestInfluxdbBroker(unittest.TestCase):
         broker.manage_log_brok(brok)
         point = broker.buffer[0]
         self.assertEqual(point['name'], 'localhost.check-ssh._events_.NOTIFICATION')
+
+    def test_log_brok_illegal_char(self):
+        data = {
+            'log': '[1329144231] SERVICE ALERT: www.cibc.com;www.cibc.com;WARNING;HARD;4;WARNING - load average: 5.04, 4.67, 5.04'
+        }
+        brok = Brok('log', data)
+        brok.prepare()
+        broker = InfluxdbBroker(self.basic_modconf)
+        broker.manage_log_brok(brok)
+        point = broker.buffer[0]
+        self.assertEqual(point['name'], 'www_cibc_com.www_cibc_com._events_.ALERT')
 
 
