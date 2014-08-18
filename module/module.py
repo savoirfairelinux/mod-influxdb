@@ -160,7 +160,7 @@ class InfluxdbBroker(BaseModule):
     # A host check result brok has just arrived, we UPDATE data info with this
     def manage_host_check_result_brok(self, b):
         data = b.data
-        name = self.illegal_char.sub('_', data['host_name'])
+        name = self.illegal_char.sub('_', data['host_name']) + "._self_"
 
         post_data = []
 
