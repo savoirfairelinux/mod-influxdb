@@ -2,5 +2,3 @@ mod-influxdb [![Build Status](https://travis-ci.org/savoirfairelinux/mod-influxd
 ============
 
 Shinken module for exporting data to an InfluxDB server
-
-I am interested in supporting versions of Shinken other than >2.0.3. If you need it, please open an issue.
