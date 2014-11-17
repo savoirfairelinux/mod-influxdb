@@ -97,7 +97,8 @@ def decode_serie_name(serie_name):
         else:
             cur.append(char)
         idx += 1
-    ret.append(''.join(cur))
+    if cur:
+        ret.append(''.join(cur))
     return ret
 
 #############################################################################

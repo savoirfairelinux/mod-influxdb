@@ -2,7 +2,6 @@
 import sys
 import time
 
-
 from module.module import (
     InfluxdbBroker,
     get_instance,
@@ -24,6 +23,12 @@ class Test_serie_name(unittest.TestCase):
 
     def test_bad_kw(self):
         self.assertRaises(TypeError, encode_serie_name, unexpected_kw='bla')
+
+    def test_empty(self):
+        vals = []
+        encoded = encode_serie_name(*vals)
+        self.assertEqual('', encoded)
+        self.assertEqual(vals, decode_serie_name(encoded))
 
     def test_simple(self):
         vals = [ 'hostname', 'service' ]
