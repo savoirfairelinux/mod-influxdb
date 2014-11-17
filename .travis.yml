@@ -8,6 +8,7 @@ install:
   - "sudo useradd shinken"
   - "pip install -r requirements.txt"
   - "pip install coveralls"
+  - "pip install unittest2"
 
 script: nosetests -vx --with-coverage --cover-package=module
 
