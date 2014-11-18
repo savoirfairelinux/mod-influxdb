@@ -59,22 +59,24 @@ def get_instance(mod_conf):
 
 #############################################################################
 
+_serie_separator = '>'
+
 def _escape_serie_name_value(value):
     ''' escape the '>' char (with usual '\') as it's used as item separator in the serie name.
      and so also escape the '\' as it's used as escape char.
      '\' have to be escaped first..
     '''
-    return value.replace('\\', r'\\').replace('>', r'\>')
+    return value.replace('\\', r'\\').replace(_serie_separator, r'\%s' % _serie_separator)
 
 def encode_serie_name(*args, **kw):
     front = kw.pop('front', None)
     if kw:
-        raise TypeError('Unexpectd keyword argument to encode_serie_name: %s' % repr(kw))
-    ret = '>'.join(
+        raise TypeError('Unexpected keyword argument to encode_serie_name: %s' % repr(kw))
+    ret = _serie_separator.join(
         _escape_serie_name_value(arg) for arg in args
     )
     if front is not None:
-        ret = '%s>%s' % (front, ret)
+        ret = '%s%s%s' % (front, _serie_separator, ret)
     return ret
 
 def decode_serie_name(serie_name):
@@ -91,7 +93,7 @@ def decode_serie_name(serie_name):
             else:
                 char = serie_name[idx]
             cur.append(char)
-        elif char == '>':
+        elif char == _serie_separator:
             ret.append(''.join(cur))
             cur = []
         else:
