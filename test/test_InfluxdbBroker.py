@@ -19,7 +19,8 @@ basic_dict_modconf = dict(
     module_type='influxdbBroker'
 )
 
-class Test_serie_name(unittest.TestCase):
+
+class TestSerieName(unittest.TestCase):
 
     def test_bad_kw(self):
         self.assertRaises(TypeError, encode_serie_name, unexpected_kw='bla')
@@ -232,8 +233,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(broker.buffer, [])
 
 
-
-class Test_influxdb_broker_instance(unittest.TestCase):
+class TestInfluxdbBrokerInstance(unittest.TestCase):
 
     def setUp(self):
         self.basic_modconf = Module(basic_dict_modconf)
@@ -289,53 +289,47 @@ class Test_influxdb_broker_instance(unittest.TestCase):
         point = broker.buffer[0]
         self.assertEqual(point['name'], 'www.cibc.com>www.cibc.com>_events_>ALERT')
 
-
-    def _prepare_brok(self):
-        data = {
-           'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 memused=1550GB;2973;3964;0;5810',
-        #  'last_chk': 1403618279,
-        }
-        data = {
-            'log': '[1402515279] SERVICE NOTIFICATION: admin;localhost;check-ssh;CRITICAL;notify-service-by-email;Connection refused',
-            'service_description':  'check-ssh',
-            'host_name':    'host1',
-            'perf_data': data['perf_data'],
-            'last_chk': time.time(),
-            'state':    "HARD",
-            'last_state':   "HARD",
-            'state_type':   "SOFT",
-            'last_state_type':  "SOFT",
-            'time_stamp': 11231321,
-        }
-        brok = Brok('log', data)
-        brok.prepare()
-        return brok
-
-    def test_manage_service_check_result_brok(self):
-        broker = self.influx_broker
-        broker.manage_service_check_result_brok(self._prepare_brok())
-        point = broker.buffer[0]
-        print(point)
-        # TODO : continue
-
-
-    def test_manage_host_check_result_brok(self):
-        broker = self.influx_broker
-        broker.manage_host_check_result_brok(self._prepare_brok())
-        point = broker.buffer[0]
-        print(point)
-        # TODO : continue
-
     def test_manage_unknown_host_check_result_brok(self):
+        # Prepare the Brok
+        data = {
+            'time_stamp': 1234567890, 'return_code': '2',
+            'host_name': 'test_host_0', 'output': 'Bob is not happy',
+            'perf_data': 'rtt=9999'
+        }
+        brok = Brok('unknown_host_check_result', data)
+        brok.prepare()
+
+        # Send the brok
         broker = self.influx_broker
-        broker.manage_unknown_host_check_result_brok(self._prepare_brok())
-        point = broker.buffer[0]
-        print(point)
-        # TODO : continue
+        broker.manage_unknown_host_check_result_brok(brok)
+
+        self.assertEqual(
+            broker.buffer[0],
+            {'points': [[1234567890, 9999, '', None, None, None, None]],
+             'name': 'test_host_0>rtt', 'columns':
+                ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']
+             }
+        )
 
     def test_manage_unknown_service_check_result_brok(self):
+        # Prepare the Brok
+        data = {
+            'host_name': 'test_host_0', 'time_stamp': 1234567890,
+            'service_description': 'test_ok_0', 'return_code': '1',
+            'output': 'Bobby is not happy',
+            'perf_data': 'rtt=9999;5;10;0;10000'
+        }
+        brok = Brok('unknown_service_check_result', data)
+        brok.prepare()
+
+        # Send the brok
         broker = self.influx_broker
-        broker.manage_unknown_service_check_result_brok(self._prepare_brok())
-        point = broker.buffer[0]
-        print(point)
-        # TODO : continue
+        broker.manage_unknown_service_check_result_brok(brok)
+
+        self.assertEqual(
+            broker.buffer[0],
+            {'points': [[1234567890, 9999, '', 5, 10, 0, 10000]], 'name':
+                'test_host_0>test_ok_0>rtt', 'columns':
+                ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']
+             }
+        )

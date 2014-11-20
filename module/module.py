@@ -306,10 +306,10 @@ class InfluxdbBroker(BaseModule):
         if len(event) > 0:
             # include service_desc in the table name if present
             if 'service_desc' in event and event['service_desc'] is not None:
-                srv = event['service_desc']
+                service_desc = event['service_desc']
             else:
-                srv = '_self_'
-            name = encode_serie_name(event['hostname'], srv, '_events_', event['event_type'])
+                service_desc = '_self_'
+            name = encode_serie_name(event['hostname'], service_desc, '_events_', event['event_type'])
 
             point = {
                 "points": [[]],
