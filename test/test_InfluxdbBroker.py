@@ -1,7 +1,4 @@
 
-import sys
-import time
-
 from module.module import (
     InfluxdbBroker,
     get_instance,
