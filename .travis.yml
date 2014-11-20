@@ -9,9 +9,11 @@ install:
   - "pip install -r requirements.txt"
   - "pip install coveralls"
   - "pip install unittest2"
+  - "pip install flake8"
 
-script: nosetests -vx --with-coverage --cover-package=module
-
+script: 
+    - nosetests -vx --with-coverage --cover-package=module
+    - flake8 module --exclude logevent.py
 after_success:
   coveralls
 

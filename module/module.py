@@ -52,7 +52,10 @@ properties = {
 
 # Called by the plugin manager to get a broker
 def get_instance(mod_conf):
-    logger.info("[influxdb broker] Get an influxdb data module for plugin %s" % mod_conf.get_name())
+    logger.info(
+        "[influxdb broker] Get an influxdb data module for plugin %s"
+        % mod_conf.get_name()
+    )
     instance = InfluxdbBroker(mod_conf)
     return instance
 
@@ -61,23 +64,33 @@ def get_instance(mod_conf):
 
 _serie_separator = '>'
 
+
 def _escape_serie_name_value(value):
-    ''' escape the '>' char (with usual '\') as it's used as item separator in the serie name.
-     and so also escape the '\' as it's used as escape char.
-     '\' have to be escaped first..
-    '''
-    return value.replace('\\', r'\\').replace(_serie_separator, r'\%s' % _serie_separator)
+    """ escape the '>' char (with usual '\') as it's used as item separator
+    in the serie name. and so also escape the '\' as it's used as escape char.
+    '\' have to be escaped first..
+    """
+    escape_slash = value.replace('\\', r'\\')
+
+    use_separator = escape_slash.replace(
+        _serie_separator, r'\%s' % _serie_separator
+    )
+    return use_separator
+
 
 def encode_serie_name(*args, **kw):
     front = kw.pop('front', None)
     if kw:
-        raise TypeError('Unexpected keyword argument to encode_serie_name: %s' % repr(kw))
+        raise TypeError(
+            'Unexpected keyword argument to encode_serie_name: %s' % repr(kw)
+        )
     ret = _serie_separator.join(
         _escape_serie_name_value(arg) for arg in args
     )
     if front is not None:
         ret = '%s%s%s' % (front, _serie_separator, ret)
     return ret
+
 
 def decode_serie_name(serie_name):
     idx = 0
@@ -88,7 +101,11 @@ def decode_serie_name(serie_name):
         if char == '\\':
             idx += 1
             if idx >= len(serie_name):
-                logger.warning('Invalid encoded serie name: escape char (\) on end of name without additional char ; serie_name=%r' % serie_name)
+                logger.warning(
+                    'Invalid encoded serie name: escape char (\) on end of'
+                    ' name without additional char ; serie_name=%r'
+                    % serie_name
+                )
                 char = ''
             else:
                 char = serie_name[idx]
@@ -104,6 +121,7 @@ def decode_serie_name(serie_name):
     return ret
 
 #############################################################################
+
 
 # Class for the influxdb Broker
 # Get broks and send them to influxdb
@@ -125,7 +143,6 @@ class InfluxdbBroker(BaseModule):
         self.ticks = 0
         self.tick_limit = int(getattr(modconf, 'tick_limit', '300'))
 
-
     def extend_buffer(self, other):
         with self._lock:
             self.buffer.extend(other)
@@ -133,34 +150,46 @@ class InfluxdbBroker(BaseModule):
     # Called by Broker so we can do init stuff
     # Conf from arbiter!
     def init(self):
-        logger.info("[influxdb broker] I init the %s server connection to %s:%d" %
-                    (self.get_name(), str(self.host), self.port))
+        logger.info(
+            "[influxdb broker] I init the %s server connection to %s:%d" %
+            (self.get_name(), str(self.host), self.port)
+        )
 
-        self.db = InfluxDBClient(self.host, self.port, self.user, self.password, self.database,
-                                 use_udp=self.use_udp, udp_port=self.udp_port, timeout=None)
+        self.db = InfluxDBClient(
+            self.host, self.port, self.user, self.password, self.database,
+            use_udp=self.use_udp, udp_port=self.udp_port, timeout=None
+        )
 
-
-    # TODO: most methods below are doing nearly the same things, modulo 2-3 little differences.
-    # TODO: factorize all that..
+    # TODO: most methods below are doing nearly the same things, modulo 2-3
+    # little differences. factorize all that..
 
     # Returns perfdata points
     @staticmethod
     def get_check_result_perfdata_points(perf_data, timestamp, name):
-        '''
+        """
         :param perf_data:
         :param timestamp:
         :param name: an already encoded serie name: "part1>part2(>partX)"
         :return:
-        '''
+        """
         points = []
         metrics = PerfDatas(perf_data).metrics
 
         for e in metrics.values():
             points.append(
-                {"points": [[timestamp, e.value, e.uom, e.warning, e.critical, e.min, e.max]],
-                 "name": encode_serie_name(e.name, front=name),
-                 "columns": ["time", "value", "unit", "warning", "critical", "min", "max"]
-                 }
+                {
+                    "points": [
+                        [
+                            timestamp, e.value, e.uom,
+                            e.warning, e.critical, e.min, e.max
+                        ]
+                    ],
+                    "name": encode_serie_name(e.name, front=name),
+                    "columns": [
+                        "time", "value", "unit",
+                        "warning", "critical", "min", "max"
+                    ]
+                }
             )
 
         return points
@@ -168,11 +197,11 @@ class InfluxdbBroker(BaseModule):
     # Returns state_update points for a given check_result_brok data
     @staticmethod
     def get_state_update_points(data, name):
-        '''
+        """
         :param data:
         :param name: An already encoded serie name: "part1>part2(.. >partX)"
         :return:
-        '''
+        """
         points = []
 
         if data['state'] != data['last_state'] or \
@@ -184,10 +213,10 @@ class InfluxdbBroker(BaseModule):
                         data['last_chk'],
                         data['state'],
                         data['state_type'],
-                        #We should not bother posting attempt
-                        #if max_check_attempts is not available
-                        #data['attempt'],
-                        #data['max_check_attempts']
+                        # We should not bother posting attempt
+                        # if max_check_attempts is not available
+                        # data['attempt'],
+                        # data['max_check_attempts']
                         data['output']
                     ]],
                     "name": encode_serie_name("_events_", "ALERT", front=name),
@@ -195,8 +224,8 @@ class InfluxdbBroker(BaseModule):
                         "time",
                         "state",
                         "state_type",
-                        #"current_check_attempt",
-                        #"max_check_attempts",
+                        # "current_check_attempt",
+                        # "max_check_attempts",
                         "output"
                     ]
                 }
@@ -204,10 +233,14 @@ class InfluxdbBroker(BaseModule):
 
         return points
 
-    # A service check result brok has just arrived, we UPDATE data info with this
+    # A service check result brok has just arrived,
+    # we UPDATE data info with this
     def manage_service_check_result_brok(self, b):
         data = b.data
-        name = encode_serie_name(data['host_name'], data['service_description'])
+        name = encode_serie_name(
+            data['host_name'],
+            data['service_description']
+        )
 
         post_data = []
 
@@ -279,7 +312,10 @@ class InfluxdbBroker(BaseModule):
 
     def manage_unknown_service_check_result_brok(self, b):
         data = b.data
-        name = encode_serie_name(data['host_name'], data['service_description'])
+        name = encode_serie_name(
+            data['host_name'],
+            data['service_description']
+        )
 
         post_data = []
 
@@ -309,7 +345,13 @@ class InfluxdbBroker(BaseModule):
                 service_desc = event['service_desc']
             else:
                 service_desc = '_self_'
-            name = encode_serie_name(event['hostname'], service_desc, '_events_', event['event_type'])
+
+            name = encode_serie_name(
+                event['hostname'],
+                service_desc,
+                '_events_',
+                event['event_type']
+            )
 
             point = {
                 "points": [[]],
@@ -318,7 +360,10 @@ class InfluxdbBroker(BaseModule):
             }
 
             # Add each property of the service in the point
-            for prop in [prop for prop in event if prop[0] not in ['hostname', 'event_type', 'service_desc']]:
+            for prop in [
+                prop for prop in event
+                if prop[0] not in ['hostname', 'event_type', 'service_desc']
+            ]:
                 point['columns'].append(prop[0])
                 point['points'][0].append(prop[1])
 
@@ -330,7 +375,10 @@ class InfluxdbBroker(BaseModule):
             with self._lock:
                 buffer = self.buffer
                 self.buffer = []
-            logger.error("[influxdb broker] Buffering ticks exceeded. Freeing buffer, lost %d entries" % len(buffer))
+            logger.error(
+                "[influxdb broker] Buffering ticks exceeded. "
+                "Freeing buffer, lost %d entries" % len(buffer)
+            )
             self.ticks = 0
 
         if len(self.buffer) > 0:
@@ -339,10 +387,13 @@ class InfluxdbBroker(BaseModule):
                 self.buffer = []
             try:
                 self.db.write_points(buffer)
-            except Exception as err:
+            except Exception:
                 self.ticks += 1
-                logger.error("[influxdb broker] Sending data Failed. Buffering state : %s / %s"
-                             % (self.ticks, self.tick_limit))
+                logger.error(
+                    "[influxdb broker] Sending data Failed. "
+                    "Buffering state : %s / %s"
+                    % (self.ticks, self.tick_limit)
+                )
                 with self._lock:
                     buffer.extend(self.buffer)
                     self.buffer = buffer
