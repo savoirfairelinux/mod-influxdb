@@ -60,69 +60,6 @@ def get_instance(mod_conf):
     return instance
 
 
-#############################################################################
-
-_serie_separator = '>'
-
-
-def _escape_serie_name_value(value):
-    """ escape the '>' char (with usual '\') as it's used as item separator
-    in the serie name. and so also escape the '\' as it's used as escape char.
-    '\' have to be escaped first..
-    """
-    escape_slash = value.replace('\\', r'\\')
-
-    use_separator = escape_slash.replace(
-        _serie_separator, r'\%s' % _serie_separator
-    )
-    return use_separator
-
-
-def encode_serie_name(*args, **kw):
-    front = kw.pop('front', None)
-    if kw:
-        raise TypeError(
-            'Unexpected keyword argument to encode_serie_name: %s' % repr(kw)
-        )
-    ret = _serie_separator.join(
-        _escape_serie_name_value(arg) for arg in args
-    )
-    if front is not None:
-        ret = '%s%s%s' % (front, _serie_separator, ret)
-    return ret
-
-
-def decode_serie_name(serie_name):
-    idx = 0
-    ret = []
-    cur = []
-    while idx < len(serie_name):
-        char = serie_name[idx]
-        if char == '\\':
-            idx += 1
-            if idx >= len(serie_name):
-                logger.warning(
-                    'Invalid encoded serie name: escape char (\) on end of'
-                    ' name without additional char ; serie_name=%r'
-                    % serie_name
-                )
-                char = ''
-            else:
-                char = serie_name[idx]
-            cur.append(char)
-        elif char == _serie_separator:
-            ret.append(''.join(cur))
-            cur = []
-        else:
-            cur.append(char)
-        idx += 1
-    if cur:
-        ret.append(''.join(cur))
-    return ret
-
-#############################################################################
-
-
 # Class for the influxdb Broker
 # Get broks and send them to influxdb
 class InfluxdbBroker(BaseModule):
@@ -160,47 +97,41 @@ class InfluxdbBroker(BaseModule):
             use_udp=self.use_udp, udp_port=self.udp_port, timeout=None
         )
 
-    # TODO: most methods below are doing nearly the same things, modulo 2-3
-    # little differences. factorize all that..
-
-    # Returns perfdata points
     @staticmethod
-    def get_check_result_perfdata_points(perf_data, timestamp, name):
+    def get_check_result_perfdata_points(perf_data, timestamp, tags={}):
         """
-        :param perf_data:
-        :param timestamp:
-        :param name: an already encoded serie name: "part1>part2(>partX)"
-        :return:
+        :param perf_data: Perf data of the brok
+        :param timestamp: Timestamp of the check result
+        :param tags: Tags for the point
+        :return: List of perfdata points
         """
         points = []
         metrics = PerfDatas(perf_data).metrics
 
         for e in metrics.values():
-            points.append(
-                {
-                    "points": [
-                        [
-                            timestamp, e.value, e.uom,
-                            e.warning, e.critical, e.min, e.max
-                        ]
-                    ],
-                    "name": encode_serie_name(e.name, front=name),
-                    "columns": [
-                        "time", "value", "unit",
-                        "warning", "critical", "min", "max"
-                    ]
-                }
-            )
+            fields = {}
+            field_names = ['value', 'unit', 'warning', 'critical', 'min', 'max']
+            for field_name in field_names:
+                value = getattr(e, field_name, None)
+                if value is not None:
+                    fields[field_name] = value
+
+            point = {
+                "name": e.name,
+                "timestamp": timestamp,
+                "fields": fields,
+                "tags": tags,
+            }
+
+            points.append(point)
 
         return points
 
-    # Returns state_update points for a given check_result_brok data
     @staticmethod
-    def get_state_update_points(data, name):
+    def get_state_update_points(data, tags={}):
         """
-        :param data:
-        :param name: An already encoded serie name: "part1>part2(.. >partX)"
-        :return:
+        :param tags: Tags for the points
+        :return: Returns state_update points for a given check_result_brok data
         """
         points = []
 
@@ -209,25 +140,13 @@ class InfluxdbBroker(BaseModule):
 
             points.append(
                 {
-                    "points": [[
-                        data['last_chk'],
-                        data['state'],
-                        data['state_type'],
-                        # We should not bother posting attempt
-                        # if max_check_attempts is not available
-                        # data['attempt'],
-                        # data['max_check_attempts']
-                        data['output']
-                    ]],
-                    "name": encode_serie_name("_events_", "ALERT", front=name),
-                    "columns": [
-                        "time",
-                        "state",
-                        "state_type",
-                        # "current_check_attempt",
-                        # "max_check_attempts",
-                        "output"
-                    ]
+                    "name": "ALERT",
+                    "timestamp": data['last_chk'],
+                    "fields": {
+                        "state": data['state'],
+                        "state_type": data['state_type'],
+                        "output": data['output'],
+                    },
                 }
             )
 
@@ -266,7 +185,10 @@ class InfluxdbBroker(BaseModule):
     # A host check result brok has just arrived, we UPDATE data info with this
     def manage_host_check_result_brok(self, b):
         data = b.data
-        name = encode_serie_name(data['host_name'], "_self_")
+
+        tags = {
+            "host_name": data['host_name'],
+        }
 
         post_data = []
 
@@ -274,16 +196,19 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['last_chk'],
-                name
+                tags=tags
             )
         )
 
         post_data.extend(
-            self.get_state_update_points(b.data, name)
+            self.get_state_update_points(
+                b.data,
+                tags
+            )
         )
 
         try:
-            logger.debug("[influxdb broker] Launching: %s" % str(post_data))
+            logger.warning("[influxdb broker] Launching: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
@@ -387,8 +312,9 @@ class InfluxdbBroker(BaseModule):
                 self.buffer = []
             try:
                 self.db.write_points(buffer)
-            except Exception:
+            except Exception as e:
                 self.ticks += 1
+                logger.error("[influxdb broker] %s" % e)
                 logger.error(
                     "[influxdb broker] Sending data Failed. "
                     "Buffering state : %s / %s"

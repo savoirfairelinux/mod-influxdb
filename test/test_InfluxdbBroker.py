@@ -2,8 +2,6 @@
 from module.module import (
     InfluxdbBroker,
     get_instance,
-    encode_serie_name,
-    decode_serie_name,
 )
 from shinken.objects.module import Module
 from shinken.brok import Brok
@@ -17,37 +15,6 @@ basic_dict_modconf = dict(
 )
 
 
-class TestSerieName(unittest.TestCase):
-
-    def test_bad_kw(self):
-        self.assertRaises(TypeError, encode_serie_name, unexpected_kw='bla')
-
-    def test_empty(self):
-        vals = []
-        encoded = encode_serie_name(*vals)
-        self.assertEqual('', encoded)
-        self.assertEqual(vals, decode_serie_name(encoded))
-
-    def test_simple(self):
-        vals = [ 'hostname', 'service' ]
-        encoded = encode_serie_name(*vals)
-        self.assertEqual('hostname>service', encoded)
-        self.assertEqual(vals, decode_serie_name(encoded))
-
-    def test_complex(self):
-        vals = [ 'host>name', '>service', '\\' ]
-        encoded = encode_serie_name(*vals)
-        self.assertEqual(r'host\>name>\>service>\\', encoded)
-        self.assertEqual(vals, decode_serie_name(encoded))
-
-    def test_with_front(self):
-        vals = [ 'host>name', '>service' ]
-        front = r'\> complex front >\>'
-        encoded = encode_serie_name(*vals, front=front)
-        self.assertEqual(r'\> complex front >\>>host\>name>\>service', encoded)
-        self.assertEqual(decode_serie_name(front) + vals, decode_serie_name(encoded))
-
-
 class TestInfluxdbBroker(unittest.TestCase):
 
     def setUp(self):
@@ -58,54 +25,64 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertIsInstance(result, InfluxdbBroker)
 
     def test_get_unknown_check_result_perfdata_points(self):
-        name = 'testname'
+        tags = {"host_name": "testhello"}
         data = {
             'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 memused=1550GB;2973;3964;0;5810',
             'time_stamp': 1403618279,
         }
 
         expected = [
-            {'points': [[1403618279, 1009, 'MB', None, None, 0, 1982]],
-             'name': 'testname>ramused',
-             'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']},
-            {'points': [[1403618279, 1550, 'GB', 2973, 3964, 0, 5810]],
-             'name': 'testname>memused',
-             'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']},
-            {'points': [[1403618279, 540, 'PT', None, None, 0, 3827]],
-             'name': 'testname>swapused',
-             'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']}
-        ]
+            {'timestamp': 1403618279,
+             'tags': {'host_name': 'testhello'},
+             'name': 'ramused',
+             'fields': {'max': 1982, 'value': 1009, 'min': 0}},
+            {'timestamp': 1403618279,
+             'tags': {'host_name': 'testhello'},
+             'name': 'memused',
+             'fields': {'max': 5810, 'warning': 2973,
+                        'critical': 3964, 'value': 1550, 'min': 0}},
+            {'timestamp': 1403618279,
+             'tags': {'host_name': 'testhello'},
+             'name': 'swapused',
+             'fields': {'max': 3827, 'value': 540, 'min': 0}}]
 
         result = InfluxdbBroker.get_check_result_perfdata_points(
             data['perf_data'],
             data['time_stamp'],
-            name
+            tags
         )
         self.assertEqual(expected, result)
 
     def test_get_check_result_perfdata_points(self):
-        name = 'testname'
+        tags = {"host_name": "testname"}
         data = {
             'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 memused=1550GB;2973;3964;0;5810',
             'last_chk': 1403618279,
         }
 
         expected = [
-            {'points': [[1403618279, 1009, 'MB', None, None, 0, 1982]],
-             'name': 'testname>ramused',
-             'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']},
-            {'points': [[1403618279, 1550, 'GB', 2973, 3964, 0, 5810]],
-             'name': 'testname>memused',
-             'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']},
-            {'points': [[1403618279, 540, 'PT', None, None, 0, 3827]],
-             'name': 'testname>swapused',
-             'columns': ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']}
+            {'timestamp': 1403618279, 'name': 'ramused',
+             'tags': {'host_name': 'testname'},
+             'fields': {'max': 1982, 'value': 1009, 'min': 0}},
+
+            {'timestamp': 1403618279, 'name': 'memused',
+             'tags': {'host_name': 'testname'},
+             'fields': {'max': 5810, 'warning': 2973,
+                        'critical': 3964, 'value': 1550, 'min': 0}},
+
+            {'timestamp': 1403618279, 'name': 'swapused',
+             'tags': {'host_name': 'testname'},
+             'fields': {'max': 3827, 'value': 540, 'min': 0}}
         ]
+
         result = InfluxdbBroker.get_check_result_perfdata_points(
             data['perf_data'],
             data['last_chk'],
-            name
+            tags
         )
+
+        print result
+
         self.assertEqual(expected, result)
 
     def test_get_state_update_points(self):
