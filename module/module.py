@@ -156,10 +156,11 @@ class InfluxdbBroker(BaseModule):
     # we UPDATE data info with this
     def manage_service_check_result_brok(self, b):
         data = b.data
-        name = encode_serie_name(
-            data['host_name'],
-            data['service_description']
-        )
+
+        tags = {
+            "host_name": data['host_name'],
+            "service_description": data['service_description']
+        }
 
         post_data = []
 
@@ -167,12 +168,12 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['last_chk'],
-                name
+                tags=tags
             )
         )
 
         post_data.extend(
-            self.get_state_update_points(b.data, name)
+            self.get_state_update_points(b.data, tags)
         )
 
         try:
@@ -216,7 +217,10 @@ class InfluxdbBroker(BaseModule):
 
     def manage_unknown_host_check_result_brok(self, b):
         data = b.data
-        name = encode_serie_name(data['host_name'])
+
+        tags = {
+            "host_name": data['host_name']
+        }
 
         post_data = []
 
@@ -224,7 +228,7 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['time_stamp'],
-                name
+                tags=tags
             )
         )
 
@@ -237,10 +241,11 @@ class InfluxdbBroker(BaseModule):
 
     def manage_unknown_service_check_result_brok(self, b):
         data = b.data
-        name = encode_serie_name(
-            data['host_name'],
-            data['service_description']
-        )
+
+        tags = {
+            "host_name": data['host_name'],
+            "service_description": data['service_description']
+        }
 
         post_data = []
 
@@ -248,7 +253,7 @@ class InfluxdbBroker(BaseModule):
             self.get_check_result_perfdata_points(
                 b.data['perf_data'],
                 b.data['time_stamp'],
-                name
+                tags=tags
             )
         )
 
@@ -271,17 +276,15 @@ class InfluxdbBroker(BaseModule):
             else:
                 service_desc = '_self_'
 
-            name = encode_serie_name(
-                event['hostname'],
-                service_desc,
-                '_events_',
-                event['event_type']
-            )
-
             point = {
-                "points": [[]],
-                "name": name,
-                "columns": []
+                "name": "ALERT",
+                "timestamp": event['time'],
+                "fields": {},
+                "tags": {
+                    "host_name": event['hostname'],
+                    "service_desc": service_desc,
+                    "event_type": event['event_type'],
+                }
             }
 
             # Add each property of the service in the point
@@ -289,8 +292,7 @@ class InfluxdbBroker(BaseModule):
                 prop for prop in event
                 if prop[0] not in ['hostname', 'event_type', 'service_desc']
             ]:
-                point['columns'].append(prop[0])
-                point['points'][0].append(prop[1])
+                point['fields'][prop[0]] = prop[1]
 
             self.extend_buffer([point])
 

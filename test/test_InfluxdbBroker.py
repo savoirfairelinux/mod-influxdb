@@ -98,11 +98,10 @@ class TestInfluxdbBroker(unittest.TestCase):
             'output': 'BOB IS NOT HAPPY',
         }
         result = InfluxdbBroker.get_state_update_points(data, name)
-        expected = [
-            {'points': [[1403618279, 'WARNING', 'HARD', 'BOB IS NOT HAPPY']],
-             'name': 'testname>_events_>ALERT',
-             'columns': ['time', 'state', 'state_type', 'output']}
-        ]
+        expected = [{'timestamp': 1403618279, 'name': 'ALERT',
+                     'fields': {
+                         'state_type': 'HARD', 'output': 'BOB IS NOT HAPPY',
+                         'state': 'WARNING'}}]
         self.assertEqual(expected, result)
 
         #The state changes
@@ -115,11 +114,10 @@ class TestInfluxdbBroker(unittest.TestCase):
             'output': 'BOB IS NOT HAPPY',
         }
         result = InfluxdbBroker.get_state_update_points(data, name)
-        expected = [
-            {'points': [[1403618279, 'WARNING', 'SOFT', 'BOB IS NOT HAPPY']],
-             'name': 'testname>_events_>ALERT',
-             'columns': ['time', 'state', 'state_type', 'output']}
-        ]
+        expected = [{'timestamp': 1403618279, 'name': 'ALERT',
+                     'fields': {
+                         'state_type': 'SOFT', 'output': 'BOB IS NOT HAPPY',
+                         'state': 'WARNING'}}]
         self.assertEqual(expected, result)
 
         #Nothing changes
@@ -228,29 +226,26 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
         point = broker.buffer[0]
 
         # validate the point
-        expected = {
-            'points': [[None, 'CRITICAL', 'admin', 1402515279, 'notify-service-by-email', 'HOST']],
-            'name': 'localhost>_self_>_events_>NOTIFICATION',
-            'columns': ['acknownledgement', 'state', 'contact', 'time', 'notification_method', 'notification_type']
-        }
-
+        expected = {'timestamp': 1402515279,
+                    'tags': {'service_desc': '_self_',
+                             'host_name': 'localhost',
+                             'event_type': 'NOTIFICATION'},
+                    'name': 'ALERT',
+                    'fields': {'time': 1402515279, 'state': 'CRITICAL',
+                               'contact': 'admin', 'notification_type': 'HOST',
+                               'notification_method': 'notify-service-by-email',
+                               'output': 'Connection refused'}}
         self.assertEqual(expected, point)
 
-        # And that there is as much columns as there is points
-        # (manage_log_brok has a special way of creating points)
-        self.assertEqual(
-            len(point['points'][0]),
-            len(point['columns'])
-        )
-
-        # A service notification's name should be different (host.service._events_.[event_type])
+        # A service notification's tags should include service_desc
         data['log'] = '[1402515279] SERVICE NOTIFICATION: admin;localhost;check-ssh;CRITICAL;notify-service-by-email;Connection refused'
         brok = Brok('log', data)
         brok.prepare()
         broker.buffer = []
         broker.manage_log_brok(brok)
         point = broker.buffer[0]
-        self.assertEqual(point['name'], 'localhost>check-ssh>_events_>NOTIFICATION')
+        self.assertEqual(point['name'], 'ALERT')
+        self.assertEqual(point['tags']['service_desc'], 'check-ssh')
 
     def test_log_brok_illegal_char(self):
         data = {
@@ -261,7 +256,9 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
         broker = self.influx_broker
         broker.manage_log_brok(brok)
         point = broker.buffer[0]
-        self.assertEqual(point['name'], 'www.cibc.com>www.cibc.com>_events_>ALERT')
+        self.assertEqual(point['name'], 'ALERT')
+        self.assertEqual(point['tags']['host_name'], 'www.cibc.com')
+        self.assertEqual(point['tags']['service_desc'], 'www.cibc.com')
 
     def test_manage_unknown_host_check_result_brok(self):
         # Prepare the Brok
@@ -279,10 +276,10 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
 
         self.assertEqual(
             broker.buffer[0],
-            {'points': [[1234567890, 9999, '', None, None, None, None]],
-             'name': 'test_host_0>rtt', 'columns':
-                ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']
-             }
+            {'timestamp': 1234567890,
+             'tags': {'host_name': 'test_host_0'},
+             'name': 'rtt',
+             'fields': {'value': 9999}}
         )
 
     def test_manage_unknown_service_check_result_brok(self):
@@ -299,11 +296,12 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
         # Send the brok
         broker = self.influx_broker
         broker.manage_unknown_service_check_result_brok(brok)
-
         self.assertEqual(
             broker.buffer[0],
-            {'points': [[1234567890, 9999, '', 5, 10, 0, 10000]], 'name':
-                'test_host_0>test_ok_0>rtt', 'columns':
-                ['time', 'value', 'unit', 'warning', 'critical', 'min', 'max']
-             }
+            {'timestamp': 1234567890,
+             'tags': {'service_description': 'test_ok_0',
+                      'host_name': 'test_host_0'},
+             'name': 'rtt', 'fields': {'max': 10000, 'warning': 5,
+                                       'critical': 10, 'value': 9999,
+                                       'min': 0}}
         )
