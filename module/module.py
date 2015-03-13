@@ -43,23 +43,6 @@ try:
 except ImportError:
     from logevent import LogEvent
 
-properties = {
-    'daemons': ['broker'],
-    'type': 'influxdb_perfdata',
-    'external': False,
-}
-
-
-# Called by the plugin manager to get a broker
-def get_instance(mod_conf):
-    logger.info(
-        "[influxdb broker] Get an influxdb data module for plugin %s"
-        % mod_conf.get_name()
-    )
-    instance = InfluxdbBroker(mod_conf)
-    return instance
-
-
 # Class for the influxdb Broker
 # Get broks and send them to influxdb
 class InfluxdbBroker(BaseModule):

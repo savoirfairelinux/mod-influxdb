@@ -1,8 +1,8 @@
 
-from module.module import (
-    InfluxdbBroker,
-    get_instance,
-)
+from module.module import InfluxdbBroker
+
+from module import get_instance
+
 from shinken.objects.module import Module
 from shinken.brok import Brok
 
