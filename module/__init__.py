@@ -11,6 +11,7 @@ properties = {
     'external': False,
 }
 
+
 # Called by the plugin manager to get a broker
 def get_instance(mod_conf):
     logger.info(
@@ -19,4 +20,3 @@ def get_instance(mod_conf):
     )
     instance = InfluxdbBroker(mod_conf)
     return instance
-

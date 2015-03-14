@@ -43,6 +43,7 @@ try:
 except ImportError:
     from logevent import LogEvent
 
+
 # Class for the influxdb Broker
 # Get broks and send them to influxdb
 class InfluxdbBroker(BaseModule):
@@ -93,7 +94,8 @@ class InfluxdbBroker(BaseModule):
 
         for e in metrics.values():
             fields = {}
-            field_names = ['value', 'unit', 'warning', 'critical', 'min', 'max']
+            field_names = ['value', 'unit', 'warning',
+                           'critical', 'min', 'max']
             for field_name in field_names:
                 value = getattr(e, field_name, None)
                 if value is not None:
