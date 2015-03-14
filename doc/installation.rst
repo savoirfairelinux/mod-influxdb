@@ -17,8 +17,9 @@ Requirements
 The InfluxDB module requires:
 
   * Python 2.6+
-  * Shinken 2.0+
-  * python-influxdb
+  * Shinken 2.4+
+  * python-influxdb >=1.0.0
+  * InfluxDB >= 0.9.0
 
 Installation
 ============
