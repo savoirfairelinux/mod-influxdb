@@ -82,7 +82,8 @@ class InfluxdbBroker(BaseModule):
         )
 
     @staticmethod
-    def get_check_result_perfdata_points(perf_data, timestamp, tags={}):
+    def get_check_result_perfdata_points(command_name, perf_data,
+                                         timestamp, tags={}):
         """
         :param perf_data: Perf data of the brok
         :param timestamp: Timestamp of the check result
@@ -102,7 +103,7 @@ class InfluxdbBroker(BaseModule):
                     fields[field_name] = value
 
             point = {
-                "name": 'metric_%s' % e.name,
+                "name": 'metric_%s_%s' % (command_name, e.name),
                 "timestamp": timestamp,
                 "fields": fields,
                 "tags": tags,
@@ -151,6 +152,7 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_check_result_perfdata_points(
+                b.data['check_command'].command,
                 b.data['perf_data'],
                 b.data['last_chk'],
                 tags=tags
@@ -180,6 +182,7 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_check_result_perfdata_points(
+                b.data['check_command'].command,
                 b.data['perf_data'],
                 b.data['last_chk'],
                 tags=tags
@@ -211,6 +214,7 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_check_result_perfdata_points(
+                b.data['check_command'].command,
                 b.data['perf_data'],
                 b.data['time_stamp'],
                 tags=tags
@@ -236,6 +240,7 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_check_result_perfdata_points(
+                b.data['check_command'].command,
                 b.data['perf_data'],
                 b.data['time_stamp'],
                 tags=tags

@@ -15,6 +15,17 @@ basic_dict_modconf = dict(
 )
 
 
+class CheckCommand(object):
+    def __init__(self, command):
+        self.command = command
+
+    def __getstate__(self):
+        return {'command': self.command}
+
+    def __setstate__(self, data):
+        self.command = data['command']
+
+
 class TestInfluxdbBroker(unittest.TestCase):
 
     def setUp(self):
@@ -34,19 +45,20 @@ class TestInfluxdbBroker(unittest.TestCase):
         expected = [
             {'timestamp': 1403618279,
              'tags': {'host_name': 'testhello'},
-             'name': 'metric_ramused',
+             'name': 'metric_memory_check_ramused',
              'fields': {'max': 1982, 'value': 1009, 'min': 0}},
             {'timestamp': 1403618279,
              'tags': {'host_name': 'testhello'},
-             'name': 'metric_memused',
+             'name': 'metric_memory_check_memused',
              'fields': {'max': 5810, 'warning': 2973,
                         'critical': 3964, 'value': 1550, 'min': 0}},
             {'timestamp': 1403618279,
              'tags': {'host_name': 'testhello'},
-             'name': 'metric_swapused',
+             'name': 'metric_memory_check_swapused',
              'fields': {'max': 3827, 'value': 540, 'min': 0}}]
 
         result = InfluxdbBroker.get_check_result_perfdata_points(
+            'memory_check',
             data['perf_data'],
             data['time_stamp'],
             tags
@@ -61,21 +73,22 @@ class TestInfluxdbBroker(unittest.TestCase):
         }
 
         expected = [
-            {'timestamp': 1403618279, 'name': 'metric_ramused',
+            {'timestamp': 1403618279, 'name': 'metric_memory_check_ramused',
              'tags': {'host_name': 'testname'},
              'fields': {'max': 1982, 'value': 1009, 'min': 0}},
 
-            {'timestamp': 1403618279, 'name': 'metric_memused',
+            {'timestamp': 1403618279, 'name': 'metric_memory_check_memused',
              'tags': {'host_name': 'testname'},
              'fields': {'max': 5810, 'warning': 2973,
                         'critical': 3964, 'value': 1550, 'min': 0}},
 
-            {'timestamp': 1403618279, 'name': 'metric_swapused',
+            {'timestamp': 1403618279, 'name': 'metric_memory_check_swapused',
              'tags': {'host_name': 'testname'},
              'fields': {'max': 3827, 'value': 540, 'min': 0}}
         ]
 
         result = InfluxdbBroker.get_check_result_perfdata_points(
+            'memory_check',
             data['perf_data'],
             data['last_chk'],
             tags
@@ -265,7 +278,7 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
         data = {
             'time_stamp': 1234567890, 'return_code': '2',
             'host_name': 'test_host_0', 'output': 'Bob is not happy',
-            'perf_data': 'rtt=9999'
+            'perf_data': 'rtt=9999', 'check_command': CheckCommand('fake_check'),
         }
         brok = Brok('unknown_host_check_result', data)
         brok.prepare()
@@ -278,7 +291,7 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
             broker.buffer[0],
             {'timestamp': 1234567890,
              'tags': {'host_name': 'test_host_0'},
-             'name': 'metric_rtt',
+             'name': 'metric_fake_check_rtt',
              'fields': {'value': 9999}}
         )
 
@@ -288,7 +301,8 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
             'host_name': 'test_host_0', 'time_stamp': 1234567890,
             'service_description': 'test_ok_0', 'return_code': '1',
             'output': 'Bobby is not happy',
-            'perf_data': 'rtt=9999;5;10;0;10000'
+            'perf_data': 'rtt=9999;5;10;0;10000',
+            'check_command': CheckCommand('fake_check'),
         }
         brok = Brok('unknown_service_check_result', data)
         brok.prepare()
@@ -301,7 +315,7 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
             {'timestamp': 1234567890,
              'tags': {'service_description': 'test_ok_0',
                       'host_name': 'test_host_0'},
-             'name': 'metric_rtt', 'fields': {'max': 10000, 'warning': 5,
+             'name': 'metric_fake_check_rtt', 'fields': {'max': 10000, 'warning': 5,
                                        'critical': 10, 'value': 9999,
                                        'min': 0}}
         )
