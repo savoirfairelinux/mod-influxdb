@@ -102,7 +102,7 @@ class InfluxdbBroker(BaseModule):
                     fields[field_name] = value
 
             point = {
-                "name": e.name,
+                "name": 'metric_%s' % e.name,
                 "timestamp": timestamp,
                 "fields": fields,
                 "tags": tags,
