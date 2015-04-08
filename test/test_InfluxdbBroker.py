@@ -34,16 +34,16 @@ class TestInfluxdbBroker(unittest.TestCase):
         expected = [
             {'timestamp': 1403618279,
              'tags': {'host_name': 'testhello'},
-             'name': 'ramused',
+             'name': 'metric_ramused',
              'fields': {'max': 1982, 'value': 1009, 'min': 0}},
             {'timestamp': 1403618279,
              'tags': {'host_name': 'testhello'},
-             'name': 'memused',
+             'name': 'metric_memused',
              'fields': {'max': 5810, 'warning': 2973,
                         'critical': 3964, 'value': 1550, 'min': 0}},
             {'timestamp': 1403618279,
              'tags': {'host_name': 'testhello'},
-             'name': 'swapused',
+             'name': 'metric_swapused',
              'fields': {'max': 3827, 'value': 540, 'min': 0}}]
 
         result = InfluxdbBroker.get_check_result_perfdata_points(
@@ -61,16 +61,16 @@ class TestInfluxdbBroker(unittest.TestCase):
         }
 
         expected = [
-            {'timestamp': 1403618279, 'name': 'ramused',
+            {'timestamp': 1403618279, 'name': 'metric_ramused',
              'tags': {'host_name': 'testname'},
              'fields': {'max': 1982, 'value': 1009, 'min': 0}},
 
-            {'timestamp': 1403618279, 'name': 'memused',
+            {'timestamp': 1403618279, 'name': 'metric_memused',
              'tags': {'host_name': 'testname'},
              'fields': {'max': 5810, 'warning': 2973,
                         'critical': 3964, 'value': 1550, 'min': 0}},
 
-            {'timestamp': 1403618279, 'name': 'swapused',
+            {'timestamp': 1403618279, 'name': 'metric_swapused',
              'tags': {'host_name': 'testname'},
              'fields': {'max': 3827, 'value': 540, 'min': 0}}
         ]
@@ -278,7 +278,7 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
             broker.buffer[0],
             {'timestamp': 1234567890,
              'tags': {'host_name': 'test_host_0'},
-             'name': 'rtt',
+             'name': 'metric_rtt',
              'fields': {'value': 9999}}
         )
 
@@ -301,7 +301,7 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
             {'timestamp': 1234567890,
              'tags': {'service_description': 'test_ok_0',
                       'host_name': 'test_host_0'},
-             'name': 'rtt', 'fields': {'max': 10000, 'warning': 5,
+             'name': 'metric_rtt', 'fields': {'max': 10000, 'warning': 5,
                                        'critical': 10, 'value': 9999,
                                        'min': 0}}
         )
