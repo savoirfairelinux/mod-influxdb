@@ -126,6 +126,7 @@ class InfluxdbBroker(BaseModule):
             points.append(
                 {
                     "name": "ALERT",
+                    "tags": tags,
                     "timestamp": data['last_chk'],
                     "fields": {
                         "state": data['state'],
