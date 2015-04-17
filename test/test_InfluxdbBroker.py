@@ -86,7 +86,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         self.assertEqual(expected, result)
 
     def test_get_state_update_points(self):
-        name = 'testname'
+        tags = {'host_name': 'testname'}
 
         #the state type changes
         data = {
@@ -97,8 +97,9 @@ class TestInfluxdbBroker(unittest.TestCase):
             'last_state_type': 'SOFT',
             'output': 'BOB IS NOT HAPPY',
         }
-        result = InfluxdbBroker.get_state_update_points(data, name)
+        result = InfluxdbBroker.get_state_update_points(data, tags)
         expected = [{'timestamp': 1403618279, 'name': 'ALERT',
+                     'tags': {'host_name': 'testname'},
                      'fields': {
                          'state_type': 'HARD', 'output': 'BOB IS NOT HAPPY',
                          'state': 'WARNING'}}]
@@ -113,8 +114,9 @@ class TestInfluxdbBroker(unittest.TestCase):
             'last_state_type': 'SOFT',
             'output': 'BOB IS NOT HAPPY',
         }
-        result = InfluxdbBroker.get_state_update_points(data, name)
+        result = InfluxdbBroker.get_state_update_points(data, tags)
         expected = [{'timestamp': 1403618279, 'name': 'ALERT',
+                     'tags': {'host_name': 'testname'},
                      'fields': {
                          'state_type': 'SOFT', 'output': 'BOB IS NOT HAPPY',
                          'state': 'WARNING'}}]
@@ -129,7 +131,7 @@ class TestInfluxdbBroker(unittest.TestCase):
             'last_state_type': 'SOFT',
             'output': 'BOB IS NOT HAPPY',
         }
-        result = InfluxdbBroker.get_state_update_points(data, name)
+        result = InfluxdbBroker.get_state_update_points(data, tags)
         expected = []
         self.assertEqual(expected, result)
 
