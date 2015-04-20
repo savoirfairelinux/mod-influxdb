@@ -116,7 +116,7 @@ class InfluxdbBroker(BaseModule):
     def get_state_update_points(data, tags={}):
         """
         :param tags: Tags for the points
-        :return: Returns state_update points for a given check_result_brok data
+        :return: Returns ALERT points for a given check_result_brok data
         """
         points = []
 
@@ -135,6 +135,32 @@ class InfluxdbBroker(BaseModule):
                     },
                 }
             )
+
+        return points
+
+    @staticmethod
+    def get_state_points(data, name, tags={}):
+        """
+        :param tags: Tags for the points
+        :param name: HOST_STATE or SERVICE_STATE
+        :return: Returns 'name' points for a given check_result_brok data
+        """
+        points = []
+
+        points.append(
+            {
+                "name": name,
+                "tags": tags,
+                "timestamp": data['last_chk'],
+                "fields": {
+                    "state_type": data['state_type'],
+                    "output": data['output'],
+                    "state": data['state_id'],
+                    "last_check": data['last_chk'],
+                    "last_state_change": data['last_state_change']
+                },
+            }
+        )
 
         return points
 
@@ -160,6 +186,10 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_state_update_points(b.data, tags)
+        )
+
+        post_data.extend(
+            self.get_state_points(b.data, "SERVICE_STATE", tags)
         )
 
         try:
@@ -192,6 +222,10 @@ class InfluxdbBroker(BaseModule):
                 b.data,
                 tags
             )
+        )
+
+        post_data.extend(
+            self.get_state_points(b.data, "HOST_STATE", tags)
         )
 
         try:
