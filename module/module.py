@@ -64,6 +64,11 @@ class InfluxdbBroker(BaseModule):
         self.ticks = 0
         self.tick_limit = int(getattr(modconf, 'tick_limit', '300'))
 
+        # host_config is populated with initial_host_status broks. It holds
+        # config that is not sent again in host_check_result broks
+        self.host_config = {}
+
+
     def extend_buffer(self, other):
         with self._lock:
             self.buffer.extend(other)
@@ -203,9 +208,11 @@ class InfluxdbBroker(BaseModule):
     # A host check result brok has just arrived, we UPDATE data info with this
     def manage_host_check_result_brok(self, b):
         data = b.data
+        host_name = data['host_name']
 
         tags = {
-            "host_name": data['host_name'],
+            "host_name": host_name,
+            "address": self.host_config[host_name]['address']
         }
 
         post_data = []
@@ -285,6 +292,13 @@ class InfluxdbBroker(BaseModule):
 
         self.extend_buffer(post_data)
 
+    def manage_initial_host_status_brok(self, b):
+        data = b.data
+        host_name = data['host_name']
+        self.host_config[host_name] = {
+            'address': data['address']
+        }
+
     # A log brok has arrived, we UPDATE data info with this
     def manage_log_brok(self, b):
         log = b.data['log']
@@ -314,6 +328,11 @@ class InfluxdbBroker(BaseModule):
                 if prop[0] not in ['hostname', 'event_type', 'service_desc']
             ]:
                 point['fields'][prop[0]] = prop[1]
+
+            try:
+                logger.debug("[influxdb broker] Launching: %s" % str([point]))
+            except UnicodeEncodeError:
+                pass
 
             self.extend_buffer([point])
 
