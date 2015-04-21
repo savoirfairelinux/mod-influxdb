@@ -68,7 +68,6 @@ class InfluxdbBroker(BaseModule):
         # config that is not sent again in host_check_result broks
         self.host_config = {}
 
-
     def extend_buffer(self, other):
         with self._lock:
             self.buffer.extend(other)
