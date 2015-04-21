@@ -154,6 +154,7 @@ class InfluxdbBroker(BaseModule):
                 "timestamp": data['last_chk'],
                 "fields": {
                     "state_type": data['state_type'],
+                    'acknowledged': int(data['problem_has_been_acknowledged']),
                     "output": data['output'],
                     "state": data['state_id'],
                     "last_check": data['last_chk'],

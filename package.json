@@ -1,7 +1,7 @@
 {
   "name": "mod-influxdb",
   "types": ["module"],
-  "version": "2.1",
+  "version": "2.2",
   "homepage": "https://github.com/savoirfairelinux/mod-influxdb",
   "author": "Alexandre Viau",
   "description": "Export host and service performance data and events to InfluxDB",
