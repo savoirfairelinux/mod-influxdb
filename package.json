@@ -20,7 +20,7 @@
   ],
   "dependencies": {
     "shinken": ">=2.4",
-    "influxdb": ">=1.0.0"
+    "influxdb": ">=2.0.1"
   },
   "license": "AGPL"
 }
