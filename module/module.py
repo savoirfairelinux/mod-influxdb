@@ -30,6 +30,7 @@ to brok information of the services/hosts and events into the influxdb
 backend. http://influxdb.com/
 """
 
+import json
 import threading
 
 from shinken.basemodule import BaseModule
@@ -211,7 +212,10 @@ class InfluxdbBroker(BaseModule):
 
         tags = {
             "host_name": host_name,
-            "address": self.host_config[host_name]['address']
+            "address": self.host_config[host_name]['address'],
+            "childs": json.dumps(
+                self.host_config[host_name]['childs']  # to-be-removed
+            ),
         }
 
         post_data = []
@@ -295,7 +299,8 @@ class InfluxdbBroker(BaseModule):
         data = b.data
         host_name = data['host_name']
         self.host_config[host_name] = {
-            'address': data['address']
+            'address': data['address'],
+            'childs': data['childs'],
         }
 
     # A log brok has arrived, we UPDATE data info with this
