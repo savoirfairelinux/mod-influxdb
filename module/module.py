@@ -198,7 +198,7 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Launching: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
@@ -236,7 +236,7 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.warning("[influxdb broker] Launching: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
@@ -260,7 +260,7 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Launching: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
@@ -285,7 +285,7 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Launching: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
         except UnicodeEncodeError:
             pass
 
@@ -329,7 +329,7 @@ class InfluxdbBroker(BaseModule):
                 point['fields'][prop[0]] = prop[1]
 
             try:
-                logger.debug("[influxdb broker] Launching: %s" % str([point]))
+                logger.debug("[influxdb broker] Generated points: %s" % str([point]))
             except UnicodeEncodeError:
                 pass
 
@@ -352,6 +352,10 @@ class InfluxdbBroker(BaseModule):
                 buffer = self.buffer
                 self.buffer = []
             try:
+                try:
+                    logger.debug("[influxdb broker] Writing points: %s" % str(buffer))
+                except UnicodeEncodeError:
+                    pass
                 self.db.write_points(buffer)
             except Exception as e:
                 self.ticks += 1
