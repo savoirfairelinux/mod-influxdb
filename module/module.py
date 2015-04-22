@@ -105,14 +105,14 @@ class InfluxdbBroker(BaseModule):
                 if value is not None:
                     fields[field_name] = value
 
-            point = {
-                "name": 'metric_%s' % e.name,
-                "timestamp": timestamp,
-                "fields": fields,
-                "tags": tags,
-            }
-
-            points.append(point)
+            if fields:
+                point = {
+                    "name": 'metric_%s' % e.name,
+                    "timestamp": timestamp,
+                    "fields": fields,
+                    "tags": tags,
+                }
+                points.append(point)
 
         return points
 
