@@ -201,7 +201,8 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s",
+                         post_data)
         except UnicodeEncodeError:
             pass
 
@@ -243,7 +244,8 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s",
+                         post_data)
         except UnicodeEncodeError:
             pass
 
@@ -268,7 +270,8 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s",
+                         post_data)
         except UnicodeEncodeError:
             pass
 
@@ -294,7 +297,8 @@ class InfluxdbBroker(BaseModule):
         )
 
         try:
-            logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
+            logger.debug("[influxdb broker] Generated points: %s",
+                         post_data)
         except UnicodeEncodeError:
             pass
 
@@ -339,7 +343,8 @@ class InfluxdbBroker(BaseModule):
                 point['fields'][prop[0]] = prop[1]
 
             try:
-                logger.debug("[influxdb broker] Generated points: %s" % str([point]))
+                logger.debug("[influxdb broker] Generated points: %s",
+                             point)
             except UnicodeEncodeError:
                 pass
 
@@ -353,7 +358,7 @@ class InfluxdbBroker(BaseModule):
                 self.buffer = []
             logger.error(
                 "[influxdb broker] Buffering ticks exceeded. "
-                "Freeing buffer, lost %d entries" % len(buffer)
+                "Freeing buffer, lost %d entries", len(buffer)
             )
             self.ticks = 0
 
@@ -363,17 +368,18 @@ class InfluxdbBroker(BaseModule):
                 self.buffer = []
             try:
                 try:
-                    logger.debug("[influxdb broker] Writing points: %s" % str(buffer))
+                    logger.debug("[influxdb broker] Writing points: %s",
+                                 buffer)
                 except UnicodeEncodeError:
                     pass
                 self.db.write_points(buffer)
             except Exception as e:
                 self.ticks += 1
-                logger.error("[influxdb broker] %s" % e)
+                logger.error("[influxdb broker] %s", e)
                 logger.error(
                     "[influxdb broker] Sending data Failed. "
-                    "Buffering state : %s / %s"
-                    % (self.ticks, self.tick_limit)
+                    "Buffering state : %s / %s",
+                    self.ticks, self.tick_limit
                 )
                 with self._lock:
                     buffer.extend(self.buffer)
