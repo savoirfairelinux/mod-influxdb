@@ -216,6 +216,9 @@ class InfluxdbBroker(BaseModule):
             "childs": json.dumps(
                 self.host_config[host_name]['childs']  # to-be-removed
             ),
+            "parents": json.dumps(
+                self.host_config[host_name]['parents']  # to-be-removed
+            ),
         }
 
         post_data = []
@@ -301,6 +304,7 @@ class InfluxdbBroker(BaseModule):
         self.host_config[host_name] = {
             'address': data['address'],
             'childs': data['childs'],
+            'parents': data['parents'],
         }
 
     # A log brok has arrived, we UPDATE data info with this
