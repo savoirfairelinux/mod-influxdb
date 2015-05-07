@@ -86,6 +86,10 @@ class InfluxdbBroker(BaseModule):
             use_udp=self.use_udp, udp_port=self.udp_port, timeout=None
         )
 
+        #  Drop live state measurments.
+        self.db.query("DROP MEASUREMENT LIVE_HOST_STATE")
+        self.db.query("DROP MEASUREMENT LIVE_SERVICE_STATE")
+
     @staticmethod
     def get_check_result_perfdata_points(perf_data, timestamp, tags={}):
         """
@@ -198,6 +202,10 @@ class InfluxdbBroker(BaseModule):
             self.get_state_points(b.data, "SERVICE_STATE", tags)
         )
 
+        post_data.extend(
+            self.get_state_points(b.data, "LIVE_SERVICE_STATE", tags)
+        )
+
         try:
             logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
         except UnicodeEncodeError:
@@ -213,12 +221,6 @@ class InfluxdbBroker(BaseModule):
         tags = {
             "host_name": host_name,
             "address": self.host_config[host_name]['address'],
-            "childs": json.dumps(
-                self.host_config[host_name]['childs']  # to-be-removed
-            ),
-            "parents": json.dumps(
-                self.host_config[host_name]['parents']  # to-be-removed
-            ),
         }
 
         post_data = []
@@ -240,6 +242,15 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_state_points(b.data, "HOST_STATE", tags)
+        )
+
+        #  LIVE_HOST_STATE has more tags.
+        #  It will be deprecated when live config is available in mongodb
+        tags['childs'] = json.dumps(self.host_config[host_name]['childs'])
+        tags['parents'] = json.dumps(self.host_config[host_name]['parents'])
+
+        post_data.extend(
+            self.get_state_points(b.data, "LIVE_HOST_STATE", tags)
         )
 
         try:
