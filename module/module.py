@@ -207,7 +207,6 @@ class InfluxdbBroker(BaseModule):
 
         tags = {
             "host_name": host_name,
-            "address": self.host_config[host_name]['address'],
         }
 
         post_data = []
@@ -286,15 +285,6 @@ class InfluxdbBroker(BaseModule):
             pass
 
         self.extend_buffer(post_data)
-
-    def manage_initial_host_status_brok(self, b):
-        data = b.data
-        host_name = data['host_name']
-        self.host_config[host_name] = {
-            'address': data['address'],
-            'childs': data['childs'],
-            'parents': data['parents'],
-        }
 
     # A log brok has arrived, we UPDATE data info with this
     def manage_log_brok(self, b):
