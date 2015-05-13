@@ -65,10 +65,6 @@ class InfluxdbBroker(BaseModule):
         self.ticks = 0
         self.tick_limit = int(getattr(modconf, 'tick_limit', '300'))
 
-        # host_config is populated with initial_host_status broks. It holds
-        # config that is not sent again in host_check_result broks
-        self.host_config = {}
-
     def extend_buffer(self, other):
         with self._lock:
             self.buffer.extend(other)
@@ -86,12 +82,7 @@ class InfluxdbBroker(BaseModule):
             use_udp=self.use_udp, udp_port=self.udp_port, timeout=None
         )
 
-        #  Drop live state measurments.
-        self.db.query("DROP MEASUREMENT LIVE_HOST_STATE")
-        self.db.query("DROP MEASUREMENT LIVE_SERVICE_STATE")
-
-    @staticmethod
-    def get_check_result_perfdata_points(perf_data, timestamp, tags={}):
+    def get_check_result_perfdata_points(self, perf_data, timestamp, tags={}):
         """
         :param perf_data: Perf data of the brok
         :param timestamp: Timestamp of the check result
@@ -112,7 +103,7 @@ class InfluxdbBroker(BaseModule):
 
             if fields:
                 point = {
-                    "name": 'metric_%s' % e.name,
+                    "name": 'metric_%s' % self.illegal_char.sub('_', e.name),
                     "time": timestamp,
                     "fields": fields,
                     "tags": tags,
@@ -202,10 +193,6 @@ class InfluxdbBroker(BaseModule):
             self.get_state_points(b.data, "SERVICE_STATE", tags)
         )
 
-        post_data.extend(
-            self.get_state_points(b.data, "LIVE_SERVICE_STATE", tags)
-        )
-
         try:
             logger.debug("[influxdb broker] Generated points: %s" % str(post_data))
         except UnicodeEncodeError:
@@ -242,15 +229,6 @@ class InfluxdbBroker(BaseModule):
 
         post_data.extend(
             self.get_state_points(b.data, "HOST_STATE", tags)
-        )
-
-        #  LIVE_HOST_STATE has more tags.
-        #  It will be deprecated when live config is available in mongodb
-        tags['childs'] = json.dumps(self.host_config[host_name]['childs'])
-        tags['parents'] = json.dumps(self.host_config[host_name]['parents'])
-
-        post_data.extend(
-            self.get_state_points(b.data, "LIVE_HOST_STATE", tags)
         )
 
         try:
