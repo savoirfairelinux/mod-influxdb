@@ -113,7 +113,7 @@ class InfluxdbBroker(BaseModule):
             if fields:
                 point = {
                     "name": 'metric_%s' % e.name,
-                    "timestamp": timestamp,
+                    "time": timestamp,
                     "fields": fields,
                     "tags": tags,
                 }
@@ -136,7 +136,7 @@ class InfluxdbBroker(BaseModule):
                 {
                     "name": "ALERT",
                     "tags": tags,
-                    "timestamp": data['last_chk'],
+                    "time": data['last_chk'],
                     "fields": {
                         "state": data['state'],
                         "state_type": data['state_type'],
@@ -160,7 +160,7 @@ class InfluxdbBroker(BaseModule):
             {
                 "name": name,
                 "tags": tags,
-                "timestamp": data['last_chk'],
+                "time": data['last_chk'],
                 "fields": {
                     "state_type": data['state_type'],
                     'acknowledged': int(data['problem_has_been_acknowledged']),
@@ -332,7 +332,7 @@ class InfluxdbBroker(BaseModule):
 
             point = {
                 "name": "ALERT",
-                "timestamp": event['time'],
+                "time": event['time'],
                 "fields": {},
                 "tags": {
                     "host_name": event['hostname'],
