@@ -131,10 +131,11 @@ class InfluxdbBroker(BaseModule):
 
             points.append(
                 {
-                    "measurement": "ALERT",
+                    "measurement": "EVENT",
                     "tags": tags,
                     "time": data['last_chk'],
                     "fields": {
+                        "event_type": 'ALERT',
                         "state": data['state'],
                         "state_type": data['state_type'],
                         "output": data['output'],
@@ -306,7 +307,7 @@ class InfluxdbBroker(BaseModule):
                 service_description = '_self_'
 
             point = {
-                "measurement": "ALERT",
+                "measurement": "EVENT",
                 "time": event['time'],
                 "fields": {},
                 "tags": {
