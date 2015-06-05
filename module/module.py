@@ -94,12 +94,18 @@ class InfluxdbBroker(BaseModule):
 
         for e in metrics.values():
             fields = {}
-            field_names = ['value', 'unit', 'warning',
-                           'critical', 'min', 'max']
-            for field_name in field_names:
-                value = getattr(e, field_name, None)
+            fields_mappings = [
+                ('value', 'value'),
+                ('uom', 'unit'),
+                ('warning', 'warning'),
+                ('critical', 'critical'),
+                ('min', 'min'),
+                ('max', 'max')
+            ]
+            for mapping in fields_mappings:
+                value = getattr(e, mapping[0], None)
                 if value is not None:
-                    fields[field_name] = value
+                    fields[mapping[1]] = value
 
             if fields:
                 point = {
