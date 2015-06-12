@@ -109,7 +109,7 @@ class InfluxdbBroker(BaseModule):
 
             if fields:
                 point = {
-                    "name": 'metric_%s' % self.illegal_char.sub('_', e.name),
+                    "measurement": 'metric_%s' % self.illegal_char.sub('_', e.name),
                     "time": timestamp,
                     "fields": fields,
                     "tags": tags,
@@ -131,7 +131,7 @@ class InfluxdbBroker(BaseModule):
 
             points.append(
                 {
-                    "name": "ALERT",
+                    "measurement": "ALERT",
                     "tags": tags,
                     "time": data['last_chk'],
                     "fields": {
@@ -155,7 +155,7 @@ class InfluxdbBroker(BaseModule):
 
         points.append(
             {
-                "name": name,
+                "measurement": name,
                 "tags": tags,
                 "time": data['last_chk'],
                 "fields": {
@@ -305,7 +305,7 @@ class InfluxdbBroker(BaseModule):
                 service_desc = '_self_'
 
             point = {
-                "name": "ALERT",
+                "measurement": "ALERT",
                 "time": event['time'],
                 "fields": {},
                 "tags": {
