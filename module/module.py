@@ -131,10 +131,11 @@ class InfluxdbBroker(BaseModule):
 
             points.append(
                 {
-                    "measurement": "ALERT",
+                    "measurement": "EVENT",
                     "tags": tags,
                     "time": data['last_chk'],
                     "fields": {
+                        "event_type": 'ALERT',
                         "state": data['state'],
                         "state_type": data['state_type'],
                         "output": data['output'],
@@ -299,19 +300,19 @@ class InfluxdbBroker(BaseModule):
         event = LogEvent(log)
 
         if len(event) > 0:
-            # include service_desc in the table name if present
+            # include service_description in the table name if present
             if 'service_desc' in event and event['service_desc'] is not None:
-                service_desc = event['service_desc']
+                service_description = event['service_desc']
             else:
-                service_desc = '_self_'
+                service_description = '_self_'
 
             point = {
-                "measurement": "ALERT",
+                "measurement": "EVENT",
                 "time": event['time'],
                 "fields": {},
                 "tags": {
                     "host_name": event['hostname'],
-                    "service_desc": service_desc,
+                    "service_description": service_description,
                     "event_type": event['event_type'],
                 }
             }
