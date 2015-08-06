@@ -352,7 +352,7 @@ class InfluxdbBroker(BaseModule):
                     logger.debug("[influxdb broker] Writing points: %s" % str(buffer))
                 except UnicodeEncodeError:
                     pass
-                self.db.write_points(buffer)
+                self.db.write_points(buffer, time_precision='s')
             except Exception as e:
                 self.ticks += 1
                 logger.error("[influxdb broker] %s" % e)
