@@ -214,7 +214,7 @@ class InfluxdbBroker(BaseModule):
 
         tags = {
             "host_name": host_name,
-            "service_description": '',
+            "service_description": '__host__',
         }
 
         post_data = []
