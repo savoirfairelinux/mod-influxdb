@@ -105,6 +105,8 @@ class InfluxdbBroker(BaseModule):
             for mapping in fields_mappings:
                 value = getattr(e, mapping[0], None)
                 if value is not None:
+                    if isinstance(value, (int, long)):
+                        value = float(value)
                     fields[mapping[1]] = value
 
             if fields:
