@@ -57,6 +57,7 @@ class InfluxdbBroker(BaseModule):
         self.user = getattr(modconf, 'user', 'root')
         self.password = getattr(modconf, 'password', 'root')
         self.database = getattr(modconf, 'database', 'database')
+        self.use_https = getattr(modconf, 'use_https', False)
         self.use_udp = getattr(modconf, 'use_udp', '0') == '1'
         self.udp_port = int(getattr(modconf, 'udp_port', '4444'))
 
@@ -79,7 +80,8 @@ class InfluxdbBroker(BaseModule):
 
         self.db = InfluxDBClient(
             self.host, self.port, self.user, self.password, self.database,
-            use_udp=self.use_udp, udp_port=self.udp_port, timeout=None
+            ssl=self.use_https,use_udp=self.use_udp,
+            udp_port=self.udp_port, timeout=None
         )
 
     def get_check_result_perfdata_points(self, perf_data, timestamp, tags={}):
