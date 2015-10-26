@@ -57,7 +57,7 @@ class InfluxdbBroker(BaseModule):
         self.user = getattr(modconf, 'user', 'root')
         self.password = getattr(modconf, 'password', 'root')
         self.database = getattr(modconf, 'database', 'database')
-        self.use_https = getattr(modconf, 'use_https', False)
+        self.use_https = getattr(modconf, 'use_https', '0') == '1'
         self.use_udp = getattr(modconf, 'use_udp', '0') == '1'
         self.udp_port = int(getattr(modconf, 'udp_port', '4444'))
 
