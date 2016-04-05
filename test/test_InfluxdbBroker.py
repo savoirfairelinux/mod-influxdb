@@ -27,61 +27,93 @@ class TestInfluxdbBroker(unittest.TestCase):
     def test_get_unknown_check_result_perfdata_points(self):
         tags = {"host_name": "testhello"}
         data = {
-            'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 memused=1550GB;2973;3964;0;5810',
+            'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 \
+                memused=1550GB;2973;3964;0;5810',
             'time_stamp': 1403618279,
         }
 
         expected = [
-            {'timestamp': 1403618279,
-             'tags': {'host_name': 'testhello'},
-             'name': 'metric_ramused',
-             'fields': {'max': 1982, 'value': 1009, 'min': 0}},
-            {'timestamp': 1403618279,
-             'tags': {'host_name': 'testhello'},
-             'name': 'metric_memused',
-             'fields': {'max': 5810, 'warning': 2973,
-                        'critical': 3964, 'value': 1550, 'min': 0}},
-            {'timestamp': 1403618279,
-             'tags': {'host_name': 'testhello'},
-             'name': 'metric_swapused',
-             'fields': {'max': 3827, 'value': 540, 'min': 0}}]
+            {'fields':
+                {'max': 1982.0,
+                 'unit': 'MB',
+                 'value': 1009.0,
+                 'min': 0.0},
+                'time': 1403618279,
+                'tags': {'host_name': 'testhello'},
+                'measurement': 'metric_ramused'},
+            {'fields':
+                {'min': 0.0,
+                 'max': 5810.0,
+                 'value': 1550.0,
+                 'warning': 2973.0,
+                 'critical': 3964.0,
+                 'unit': 'GB'},
+                'time': 1403618279,
+                'tags': {'host_name': 'testhello'},
+                'measurement': 'metric_memused'},
+            {'fields':
+                {'max': 3827.0,
+                 'unit': 'PT',
+                 'value': 540.0,
+                 'min': 0.0},
+                'time': 1403618279,
+                'tags': {'host_name': 'testhello'},
+                'measurement': 'metric_swapused'}
+        ]
 
         result = InfluxdbBroker.get_check_result_perfdata_points(
+            get_instance(self.basic_modconf),
             data['perf_data'],
             data['time_stamp'],
             tags
         )
+        print result
         self.assertEqual(expected, result)
 
     def test_get_check_result_perfdata_points(self):
         tags = {"host_name": "testname"}
         data = {
-            'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 memused=1550GB;2973;3964;0;5810',
-            'last_chk': 1403618279,
+            'perf_data': 'ramused=1009MB;;;0;1982 swapused=540PT;;;0;3827 \
+                memused=1550GB;2973;3964;0;5810'
         }
+        timestamp = 1403618279
 
         expected = [
-            {'timestamp': 1403618279, 'name': 'metric_ramused',
-             'tags': {'host_name': 'testname'},
-             'fields': {'max': 1982, 'value': 1009, 'min': 0}},
-
-            {'timestamp': 1403618279, 'name': 'metric_memused',
-             'tags': {'host_name': 'testname'},
-             'fields': {'max': 5810, 'warning': 2973,
-                        'critical': 3964, 'value': 1550, 'min': 0}},
-
-            {'timestamp': 1403618279, 'name': 'metric_swapused',
-             'tags': {'host_name': 'testname'},
-             'fields': {'max': 3827, 'value': 540, 'min': 0}}
-        ]
+            {'fields':
+                {'max': 1982.0,
+                 'unit': 'MB',
+                 'value': 1009.0,
+                 'min': 0.0},
+                'time': 1403618279,
+                'tags': {'host_name': 'testname'},
+                'measurement': 'metric_ramused'},
+            {'fields':
+                {'min': 0.0,
+                 'max': 5810.0,
+                 'value': 1550.0,
+                 'warning': 2973.0,
+                 'critical': 3964.0,
+                 'unit': 'GB'},
+                'time': 1403618279,
+                'tags': {'host_name': 'testname'},
+                'measurement': 'metric_memused'},
+            {'fields':
+                {'max': 3827.0,
+                 'unit': 'PT',
+                 'value': 540.0,
+                 'min': 0.0},
+                'time': 1403618279,
+                'tags': {'host_name': 'testname'},
+                'measurement': 'metric_swapused'}]
 
         result = InfluxdbBroker.get_check_result_perfdata_points(
+            get_instance(self.basic_modconf),
             data['perf_data'],
-            data['last_chk'],
+            timestamp,
             tags
         )
 
-        print result
+        # print result
 
         self.assertEqual(expected, result)
 
@@ -98,11 +130,15 @@ class TestInfluxdbBroker(unittest.TestCase):
             'output': 'BOB IS NOT HAPPY',
         }
         result = InfluxdbBroker.get_state_update_points(data, tags)
-        expected = [{'timestamp': 1403618279, 'name': 'ALERT',
-                     'tags': {'host_name': 'testname'},
-                     'fields': {
-                         'state_type': 'HARD', 'output': 'BOB IS NOT HAPPY',
-                         'state': 'WARNING'}}]
+        expected = [
+            {'fields':
+                {'state_type': 'HARD',
+                 'output': 'BOB IS NOT HAPPY',
+                 'state': 'WARNING',
+                 'event_type': 'ALERT'},
+                'tags': {'host_name': 'testname'},
+                'time': 1403618279,
+                'measurement': 'EVENT'}]
         self.assertEqual(expected, result)
 
         #The state changes
@@ -115,11 +151,15 @@ class TestInfluxdbBroker(unittest.TestCase):
             'output': 'BOB IS NOT HAPPY',
         }
         result = InfluxdbBroker.get_state_update_points(data, tags)
-        expected = [{'timestamp': 1403618279, 'name': 'ALERT',
-                     'tags': {'host_name': 'testname'},
-                     'fields': {
-                         'state_type': 'SOFT', 'output': 'BOB IS NOT HAPPY',
-                         'state': 'WARNING'}}]
+        print result
+        expected = [
+            {'fields':
+                {'state_type': 'SOFT',
+                 'output': 'BOB IS NOT HAPPY',
+                 'state': 'WARNING',
+                 'event_type': 'ALERT'},
+                'tags': {'host_name': 'testname'},
+                'time': 1403618279, 'measurement': 'EVENT'}]
         self.assertEqual(expected, result)
 
         #Nothing changes
@@ -188,6 +228,7 @@ class TestInfluxdbBroker(unittest.TestCase):
         broker = InfluxdbBroker(self.basic_modconf)
         broker.init()
         broker.buffer.append(data)
+        broker.ticks = 300
         broker.hook_tick(None)
 
         # We are not testing python-influxdb.
@@ -215,7 +256,7 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
 
     def test_manage_log_brok(self):
         data = {
-            'log': '[1402515279] HOST NOTIFICATION: admin;localhost;CRITICAL;notify-service-by-email;Connection refused'
+            'log': '[1402515279] HOST NOTIFICATION: admin;localhost;CRITICAL;notify-service-by-email;Connection refused'  # nopep8
         }
         brok = Brok('log', data)
         brok.prepare()
@@ -228,39 +269,42 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
         point = broker.buffer[0]
 
         # validate the point
-        expected = {'timestamp': 1402515279,
-                    'tags': {'service_desc': '_self_',
+        expected = {'fields':
+                    {'time': 1402515279,
+                     'state': 'CRITICAL',
+                     'contact': 'admin',
+                     'notification_type': 'HOST',
+                     'notification_method': 'notify-service-by-email',
+                     'output': 'Connection refused'},
+                    'time': 1402515279,
+                    'tags': {'service_description': '_self_',
                              'host_name': 'localhost',
                              'event_type': 'NOTIFICATION'},
-                    'name': 'ALERT',
-                    'fields': {'time': 1402515279, 'state': 'CRITICAL',
-                               'contact': 'admin', 'notification_type': 'HOST',
-                               'notification_method': 'notify-service-by-email',
-                               'output': 'Connection refused'}}
+                    'measurement': 'EVENT'}
         self.assertEqual(expected, point)
 
         # A service notification's tags should include service_desc
-        data['log'] = '[1402515279] SERVICE NOTIFICATION: admin;localhost;check-ssh;CRITICAL;notify-service-by-email;Connection refused'
+        data['log'] = '[1402515279] SERVICE NOTIFICATION: admin;localhost;check-ssh;CRITICAL;notify-service-by-email;Connection refused'  # nopep8
         brok = Brok('log', data)
         brok.prepare()
         broker.buffer = []
         broker.manage_log_brok(brok)
         point = broker.buffer[0]
-        self.assertEqual(point['name'], 'ALERT')
-        self.assertEqual(point['tags']['service_desc'], 'check-ssh')
+        self.assertEqual(point['measurement'], 'EVENT')
+        self.assertEqual(point['tags']['service_description'], 'check-ssh')
 
     def test_log_brok_illegal_char(self):
         data = {
-            'log': '[1329144231] SERVICE ALERT: www.cibc.com;www.cibc.com;WARNING;HARD;4;WARNING - load average: 5.04, 4.67, 5.04'
+            'log': '[1329144231] SERVICE ALERT: www.cibc.com;www.cibc.com;WARNING;HARD;4;WARNING - load average: 5.04, 4.67, 5.04'  # nopep8
         }
         brok = Brok('log', data)
         brok.prepare()
         broker = self.influx_broker
         broker.manage_log_brok(brok)
         point = broker.buffer[0]
-        self.assertEqual(point['name'], 'ALERT')
+        self.assertEqual(point['measurement'], 'EVENT')
         self.assertEqual(point['tags']['host_name'], 'www.cibc.com')
-        self.assertEqual(point['tags']['service_desc'], 'www.cibc.com')
+        self.assertEqual(point['tags']['service_description'], 'www.cibc.com')
 
     def test_manage_unknown_host_check_result_brok(self):
         # Prepare the Brok
@@ -278,10 +322,11 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
 
         self.assertEqual(
             broker.buffer[0],
-            {'timestamp': 1234567890,
-             'tags': {'host_name': 'test_host_0'},
-             'name': 'metric_rtt',
-             'fields': {'value': 9999}}
+            {'fields':
+                {'unit': '', 'value': 9999.0},
+                'time': 1234567890,
+                'tags': {'host_name': 'test_host_0'},
+                'measurement': 'metric_rtt'}
         )
 
     def test_manage_unknown_service_check_result_brok(self):
@@ -300,10 +345,15 @@ class TestInfluxdbBrokerInstance(unittest.TestCase):
         broker.manage_unknown_service_check_result_brok(brok)
         self.assertEqual(
             broker.buffer[0],
-            {'timestamp': 1234567890,
-             'tags': {'service_description': 'test_ok_0',
-                      'host_name': 'test_host_0'},
-             'name': 'metric_rtt', 'fields': {'max': 10000, 'warning': 5,
-                                       'critical': 10, 'value': 9999,
-                                       'min': 0}}
+            {'fields':
+                {'min': 0.0,
+                 'max': 10000.0,
+                 'value': 9999.0,
+                 'warning': 5.0,
+                 'critical': 10.0,
+                 'unit': ''},
+                'time': 1234567890,
+                'tags': {'service_description': 'test_ok_0',
+                         'host_name': 'test_host_0'},
+                'measurement': 'metric_rtt'}
         )
