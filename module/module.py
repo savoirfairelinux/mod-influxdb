@@ -47,6 +47,8 @@ except ImportError:
 # Class for the influxdb Broker
 # Get broks and send them to influxdb
 class InfluxdbBroker(BaseModule):
+    hosts_cache = {}
+    services_cache = {}
 
     def __init__(self, modconf):
 
@@ -130,8 +132,8 @@ class InfluxdbBroker(BaseModule):
         """
         points = []
 
-        if data['state'] != data['last_state'] or \
-                data['state_type'] != data['last_state_type']:
+        if (data['state'] != data['last_state'] or
+                data['state_type'] != data['last_state_type']):
 
             points.append(
                 {
@@ -176,15 +178,76 @@ class InfluxdbBroker(BaseModule):
 
         return points
 
+    # Prepare service cache
+    def manage_initial_service_status_brok(self, b):
+        host_name = b.data['host_name']
+        service_description = b.data['service_description']
+        service_id = host_name + "/" + service_description
+        logger.info("[] got initial service status: %s", service_id)
+
+        if host_name not in self.hosts_cache:
+            logger.error(
+                """[influxdb broker] initial service status,
+                host is unknown: %s.""",
+                service_id)
+            return
+
+        self.services_cache[service_id] = {}
+        if '_INFLUX_TAG' in b.data['customs']:
+            tag_dict = {}
+            tags = b.data['customs']['_INFLUX_TAG'].split(',')
+            for tag in tags:
+                key, value = tag.split(":")
+                tag_dict[key] = value
+            self.services_cache[service_id]['_INFLUX_TAG'] = tag_dict
+
+        logger.debug("[influxdb broker] initial service status received: %s",
+                     service_id)
+
+    # Prepare host cache
+    def manage_initial_host_status_brok(self, b):
+        host_name = b.data['host_name']
+        logger.info("[influxdb broker] got initial host status: %s", host_name)
+
+        self.hosts_cache[host_name] = {}
+        if '_INFLUX_TAG' in b.data['customs']:
+            tag_dict = {}
+            tags = b.data['customs']['_INFLUX_TAG'].split(',')
+            for tag in tags:
+                key, value = tag.split(":")
+                tag_dict[key] = value
+            self.hosts_cache[host_name]['_INFLUX_TAG'] = tag_dict
+
+        logger.debug("[influxdb broker] initial host status received: %s",
+                     host_name)
+
     # A service check result brok has just arrived,
     # we UPDATE data info with this
     def manage_service_check_result_brok(self, b):
         data = b.data
 
+        host_name = data['host_name']
+        service_description = data['service_description']
+        service_id = host_name + "/" + service_description
+        logger.debug("[influxdb broker] service check result: %s", service_id)
+
+        if service_id not in self.services_cache:
+            logger.warning(
+                """[influxdb broker] received service check result
+                for an unknown service: %s""",
+                service_id)
+            return
+
+        customs_datas = self.services_cache[service_id]
+        custom_tags = {}
+        if '_INFLUX_TAG' in customs_datas:
+            custom_tags = customs_datas['_INFLUX_TAG']
+
         tags = {
-            "host_name": data['host_name'],
-            "service_description": data['service_description']
+            "host_name": host_name,
+            "service_description": service_description,
         }
+        tags.update(custom_tags)
 
         post_data = []
 
@@ -216,12 +279,25 @@ class InfluxdbBroker(BaseModule):
     def manage_host_check_result_brok(self, b):
         data = b.data
         host_name = data['host_name']
+        logger.debug("[influxdb broker] host check result: %s", host_name)
+
+        if host_name not in self.hosts_cache:
+            logger.warning(
+                """[influxdb broker] received service check result
+                 for an unknown host: %s""",
+                host_name)
+            return
+
+        customs_datas = self.hosts_cache[data['host_name']]
+        custom_tags = {}
+        if '_INFLUX_TAG' in customs_datas:
+            custom_tags = customs_datas['_INFLUX_TAG']
 
         tags = {
             "host_name": host_name,
             "service_description": '__host__',
         }
-
+        tags.update(custom_tags)
         post_data = []
 
         post_data.extend(
@@ -233,10 +309,7 @@ class InfluxdbBroker(BaseModule):
         )
 
         post_data.extend(
-            self.get_state_update_points(
-                b.data,
-                tags
-            )
+            self.get_state_update_points(b.data, tags)
         )
 
         post_data.extend(
@@ -253,17 +326,19 @@ class InfluxdbBroker(BaseModule):
 
     def manage_unknown_host_check_result_brok(self, b):
         data = b.data
+        host_name = data['host_name']
+        logger.debug("[influxdb broker] host check result: %s", host_name)
 
         tags = {
-            "host_name": data['host_name']
+            "host_name": host_name
         }
 
         post_data = []
 
         post_data.extend(
             self.get_check_result_perfdata_points(
-                b.data['perf_data'],
-                b.data['time_stamp'],
+                data['perf_data'],
+                data['time_stamp'],
                 tags=tags
             )
         )
@@ -278,18 +353,22 @@ class InfluxdbBroker(BaseModule):
 
     def manage_unknown_service_check_result_brok(self, b):
         data = b.data
+        host_name = data['host_name']
+        service_description = data['service_description']
+        service_id = host_name + "/" + service_description
+        logger.debug("[influxdb broker] service check result: %s", service_id)
 
         tags = {
-            "host_name": data['host_name'],
-            "service_description": data['service_description']
+            "host_name": host_name,
+            "service_description": service_description,
         }
 
         post_data = []
 
         post_data.extend(
             self.get_check_result_perfdata_points(
-                b.data['perf_data'],
-                b.data['time_stamp'],
+                data['perf_data'],
+                data['time_stamp'],
                 tags=tags
             )
         )

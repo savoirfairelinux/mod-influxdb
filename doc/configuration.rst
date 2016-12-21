@@ -39,3 +39,15 @@ Parameters details
 :use_udp:
 :udp_port:
 :tick_limit:
+
+Custom tag for hosts and services
+---------------------------------
+
+You can use the macro _INFLUX_TAG inside your services or your host to add a custom tag.
+A custom tag with tag key ``T1``, value ``V1`` is write ``T1:V1``
+You can add different tag using ``,``
+
+::
+
+    # Exemple
+    _INFLUX_TAG T1:V1,T2:V2
